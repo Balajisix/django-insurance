@@ -1,6 +1,170 @@
-from django.shortcuts import render
-from django.http import HttpResponse
+from rest_framework import status
+from rest_framework.authtoken.models import Token
+from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.response import Response
+from rest_framework.views import APIView
 
-# Create your views here.
-def hello(request):
-    return HttpResponse("Hello From Django")
+from .serializers import (
+    LoginResponseSerializer,
+    LoginSerializer,
+    RegistrationResponseSerializer,
+    RegisterSerializer,
+    UserSerializer,
+)
+from .services import AuthenticationService
+
+
+class RegisterView(APIView):
+    """
+    POST /api/v1/auth/register/
+    """
+
+    permission_classes = [
+        AllowAny,
+    ]
+
+    def post(self, request):
+        serializer = RegisterSerializer(
+            data=request.data
+        )
+
+        serializer.is_valid(
+            raise_exception=True
+        )
+
+        data = serializer.validated_data
+
+        user, customer = (
+            AuthenticationService.register_customer(
+                email=data["email"],
+                password=data["password"],
+                first_name=data["first_name"],
+                last_name=data["last_name"],
+                phone_number=data.get(
+                    "phone_number",
+                    "",
+                ),
+                date_of_birth=data.get(
+                    "date_of_birth"
+                ),
+                address_line=data.get(
+                    "address_line",
+                    "",
+                ),
+                city=data.get(
+                    "city",
+                    "",
+                ),
+                state=data.get(
+                    "state",
+                    "",
+                ),
+                postal_code=data.get(
+                    "postal_code",
+                    "",
+                ),
+            )
+        )
+
+        response_data = {
+            "user": user,
+            "customer": customer,
+        }
+
+        response_serializer = (
+            RegistrationResponseSerializer(
+                response_data
+            )
+        )
+
+        return Response(
+            response_serializer.data,
+            status=status.HTTP_201_CREATED,
+        )
+
+
+class LoginView(APIView):
+    """
+    POST /api/v1/auth/login/
+    """
+
+    permission_classes = [
+        AllowAny,
+    ]
+
+    def post(self, request):
+        serializer = LoginSerializer(
+            data=request.data
+        )
+
+        serializer.is_valid(
+            raise_exception=True
+        )
+
+        user = serializer.validated_data[
+            "user"
+        ]
+
+        token = (
+            AuthenticationService.login_user(
+                user
+            )
+        )
+
+        response_data = {
+            "token": token.key,
+            "user": user,
+        }
+
+        response_serializer = (
+            LoginResponseSerializer(
+                response_data
+            )
+        )
+
+        return Response(
+            response_serializer.data,
+            status=status.HTTP_200_OK,
+        )
+
+
+class LogoutView(APIView):
+    """
+    POST /api/v1/auth/logout/
+    """
+
+    permission_classes = [
+        IsAuthenticated,
+    ]
+
+    def post(self, request):
+        AuthenticationService.logout_user(
+            request.user
+        )
+
+        return Response(
+            {
+                "message": "Logged out successfully."
+            },
+            status=status.HTTP_200_OK,
+        )
+
+
+class MeView(APIView):
+    """
+    GET /api/v1/auth/me/
+    """
+
+    permission_classes = [
+        IsAuthenticated,
+    ]
+
+    def get(self, request):
+        serializer = UserSerializer(
+            request.user
+        )
+
+        return Response(
+            serializer.data,
+            status=status.HTTP_200_OK,
+        )
