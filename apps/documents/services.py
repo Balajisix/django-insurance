@@ -1,8 +1,12 @@
+from django.core.files.base import ContentFile
 from django.core.files.storage import default_storage
 from django.db import transaction
-from django.core.files.base import ContentFile
+from django.utils import timezone
 
-from apps.claims.models import Claim
+from apps.claims.models import (
+    Claim,
+    ClaimDocumentRequirement,
+)
 from apps.common.exceptions import ClaimNotFoundError
 
 from .models import ClaimDocument
@@ -67,6 +71,15 @@ class DocumentService:
             uploaded_by=uploaded_by,
         )
 
+        ClaimDocumentRequirement.objects.filter(
+            claim=claim,
+            document_type=document_type,
+            is_fulfilled=False,
+        ).update(
+            is_fulfilled=True,
+            fulfilled_at=timezone.now(),
+        )
+
         return document
 
     @staticmethod
@@ -76,8 +89,9 @@ class DocumentService:
         document_id,
     ):
         """
-        Delete the document from S3 and remove
-        its metadata from PostgreSQL.
+        Delete the document from S3 and PostgreSQL.
+        Re-open the document requirement if no documents
+        of that type remain.
         """
 
         try:
@@ -87,8 +101,27 @@ class DocumentService:
         except ClaimDocument.DoesNotExist:
             return
 
+        claim_id = document.claim_id
+        document_type = document.document_type
+
         default_storage.delete(
             document.s3_key
         )
 
         document.delete()
+
+        remaining_documents = (
+            ClaimDocument.objects.filter(
+                claim_id=claim_id,
+                document_type=document_type,
+            ).exists()
+        )
+
+        if not remaining_documents:
+            ClaimDocumentRequirement.objects.filter(
+                claim_id=claim_id,
+                document_type=document_type,
+            ).update(
+                is_fulfilled=False,
+                fulfilled_at=None,
+            )

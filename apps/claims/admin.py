@@ -1,6 +1,37 @@
 from django.contrib import admin
 
-from .models import Claim
+from .models import (
+    Claim,
+    ClaimDocumentRequirement,
+    ClaimEvent,
+    ClaimSettlement,
+)
+
+
+class ClaimEventInline(
+    admin.TabularInline
+):
+    model = ClaimEvent
+    extra = 0
+    readonly_fields = (
+        "event_type",
+        "from_status",
+        "to_status",
+        "comment",
+        "actor",
+        "created_at",
+    )
+
+
+class ClaimRequirementInline(
+    admin.TabularInline
+):
+    model = ClaimDocumentRequirement
+    extra = 0
+    readonly_fields = (
+        "created_at",
+        "updated_at",
+    )
 
 
 @admin.register(Claim)
@@ -10,7 +41,6 @@ class ClaimAdmin(admin.ModelAdmin):
         "policy",
         "claim_type",
         "status",
-        "incident_date",
         "estimated_loss",
         "approved_amount",
         "created_at",
@@ -31,4 +61,82 @@ class ClaimAdmin(admin.ModelAdmin):
         "claim_number",
         "created_at",
         "updated_at",
+    )
+
+    inlines = [
+        ClaimRequirementInline,
+        ClaimEventInline,
+    ]
+
+
+@admin.register(ClaimSettlement)
+class ClaimSettlementAdmin(admin.ModelAdmin):
+    list_display = (
+        "claim",
+        "settlement_amount",
+        "payment_reference",
+        "settled_at",
+        "created_at",
+    )
+
+    search_fields = (
+        "claim__claim_number",
+        "payment_reference",
+    )
+
+    readonly_fields = (
+        "created_at",
+        "updated_at",
+    )
+
+
+@admin.register(ClaimDocumentRequirement)
+class ClaimDocumentRequirementAdmin(
+    admin.ModelAdmin
+):
+    list_display = (
+        "claim",
+        "document_type",
+        "is_required",
+        "is_fulfilled",
+        "fulfilled_at",
+    )
+
+    list_filter = (
+        "document_type",
+        "is_required",
+        "is_fulfilled",
+    )
+
+
+@admin.register(ClaimEvent)
+class ClaimEventAdmin(admin.ModelAdmin):
+    list_display = (
+        "claim",
+        "event_type",
+        "from_status",
+        "to_status",
+        "actor",
+        "created_at",
+    )
+
+    search_fields = (
+        "claim__claim_number",
+        "actor__email",
+    )
+
+    list_filter = (
+        "event_type",
+        "from_status",
+        "to_status",
+    )
+
+    readonly_fields = (
+        "claim",
+        "event_type",
+        "from_status",
+        "to_status",
+        "comment",
+        "actor",
+        "created_at",
     )

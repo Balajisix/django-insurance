@@ -1,19 +1,35 @@
 from rest_framework import generics, status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
+from rest_framework.views import APIView
 
 from apps.policies.models import Policy
 from apps.users.models import UserRole
 
-from .models import Claim
+from .models import (
+    Claim,
+    ClaimDocumentRequirement,
+    ClaimEvent,
+)
 from .serializers import (
+    ClaimApprovalSerializer,
     ClaimCreateSerializer,
+    ClaimDocumentRequirementSerializer,
+    ClaimEventSerializer,
+    ClaimInformationRequestSerializer,
+    ClaimRejectionSerializer,
     ClaimSerializer,
+    ClaimSettlementSerializer,
+    ClaimSettlementResponseSerializer,
+    ClaimActionCommentSerializer,
 )
 from .services import ClaimService
+from .workflow import ClaimWorkflowService
 
 
-class ClaimListCreateView(generics.ListCreateAPIView):
+class ClaimListCreateView(
+    generics.ListCreateAPIView
+):
     """
     GET  /api/v1/claims/
     POST /api/v1/claims/
@@ -61,10 +77,12 @@ class ClaimListCreateView(generics.ListCreateAPIView):
         data = serializer.validated_data
 
         if request.user.role == UserRole.CUSTOMER:
-            policy_exists = Policy.objects.filter(
-                id=data["policy_id"],
-                customer__user=request.user,
-            ).exists()
+            policy_exists = (
+                Policy.objects.filter(
+                    id=data["policy_id"],
+                    customer__user=request.user,
+                ).exists()
+            )
 
             if not policy_exists:
                 return Response(
@@ -88,7 +106,9 @@ class ClaimListCreateView(generics.ListCreateAPIView):
             incident_description=data[
                 "incident_description"
             ],
-            estimated_loss=data["estimated_loss"],
+            estimated_loss=data[
+                "estimated_loss"
+            ],
         )
 
         response_serializer = ClaimSerializer(
@@ -101,7 +121,9 @@ class ClaimListCreateView(generics.ListCreateAPIView):
         )
 
 
-class ClaimDetailView(generics.RetrieveAPIView):
+class ClaimDetailView(
+    generics.RetrieveAPIView
+):
     """
     GET /api/v1/claims/{id}/
     """
@@ -131,3 +153,437 @@ class ClaimDetailView(generics.RetrieveAPIView):
             )
 
         return queryset
+
+
+class ClaimWorkflowActionView(
+    APIView
+):
+    """
+    Generic workflow action endpoint handler.
+    """
+
+    permission_classes = [
+        IsAuthenticated,
+    ]
+
+    def get_claim(self, pk):
+        try:
+            return Claim.objects.get(
+                id=pk
+            )
+        except Claim.DoesNotExist:
+            return None
+
+
+class StartDocumentProcessingView(
+    ClaimWorkflowActionView
+):
+    def post(self, request, pk):
+        claim = self.get_claim(pk)
+
+        if claim is None:
+            return Response(
+                {
+                    "error": {
+                        "code": "CLAIM_NOT_FOUND",
+                        "message": "Claim not found.",
+                    }
+                },
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        event = (
+            ClaimWorkflowService
+            .start_document_processing(
+                claim=claim,
+                actor=request.user,
+            )
+        )
+
+        return Response(
+            ClaimEventSerializer(event).data,
+            status=status.HTTP_200_OK,
+        )
+
+
+class StartReviewView(
+    ClaimWorkflowActionView
+):
+    def post(self, request, pk):
+        claim = self.get_claim(pk)
+
+        if claim is None:
+            return Response(
+                {
+                    "error": {
+                        "code": "CLAIM_NOT_FOUND",
+                        "message": "Claim not found.",
+                    }
+                },
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        event = (
+            ClaimWorkflowService
+            .start_review(
+                claim=claim,
+                actor=request.user,
+            )
+        )
+
+        return Response(
+            ClaimEventSerializer(event).data,
+            status=status.HTTP_200_OK,
+        )
+
+
+class RequestAdditionalInformationView(
+    ClaimWorkflowActionView
+):
+    def post(self, request, pk):
+        claim = self.get_claim(pk)
+
+        if claim is None:
+            return Response(
+                {
+                    "error": {
+                        "code": "CLAIM_NOT_FOUND",
+                        "message": "Claim not found.",
+                    }
+                },
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        serializer = (
+            ClaimInformationRequestSerializer(
+                data=request.data
+            )
+        )
+
+        serializer.is_valid(
+            raise_exception=True
+        )
+
+        event = (
+            ClaimWorkflowService
+            .request_additional_information(
+                claim=claim,
+                actor=request.user,
+                comment=serializer.validated_data[
+                    "comment"
+                ],
+            )
+        )
+
+        return Response(
+            ClaimEventSerializer(event).data,
+            status=status.HTTP_200_OK,
+        )
+
+
+class ResumeReviewView(
+    ClaimWorkflowActionView
+):
+    def post(self, request, pk):
+        claim = self.get_claim(pk)
+
+        if claim is None:
+            return Response(
+                {
+                    "error": {
+                        "code": "CLAIM_NOT_FOUND",
+                        "message": "Claim not found.",
+                    }
+                },
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        event = (
+            ClaimWorkflowService
+            .resume_review(
+                claim=claim,
+                actor=request.user,
+            )
+        )
+
+        return Response(
+            ClaimEventSerializer(event).data,
+            status=status.HTTP_200_OK,
+        )
+
+
+class ApproveClaimView(
+    ClaimWorkflowActionView
+):
+    def post(self, request, pk):
+        claim = self.get_claim(pk)
+
+        if claim is None:
+            return Response(
+                {
+                    "error": {
+                        "code": "CLAIM_NOT_FOUND",
+                        "message": "Claim not found.",
+                    }
+                },
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        serializer = ClaimApprovalSerializer(
+            data=request.data
+        )
+
+        serializer.is_valid(
+            raise_exception=True
+        )
+
+        event = (
+            ClaimWorkflowService
+            .approve_claim(
+                claim=claim,
+                actor=request.user,
+                approved_amount=serializer.validated_data[
+                    "approved_amount"
+                ],
+                comment=serializer.validated_data.get(
+                    "comment",
+                    "",
+                ),
+            )
+        )
+
+        return Response(
+            ClaimEventSerializer(event).data,
+            status=status.HTTP_200_OK,
+        )
+
+
+class RejectClaimView(
+    ClaimWorkflowActionView
+):
+    def post(self, request, pk):
+        claim = self.get_claim(pk)
+
+        if claim is None:
+            return Response(
+                {
+                    "error": {
+                        "code": "CLAIM_NOT_FOUND",
+                        "message": "Claim not found.",
+                    }
+                },
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        serializer = ClaimRejectionSerializer(
+            data=request.data
+        )
+
+        serializer.is_valid(
+            raise_exception=True
+        )
+
+        event = (
+            ClaimWorkflowService
+            .reject_claim(
+                claim=claim,
+                actor=request.user,
+                reason=serializer.validated_data[
+                    "reason"
+                ],
+            )
+        )
+
+        return Response(
+            ClaimEventSerializer(event).data,
+            status=status.HTTP_200_OK,
+        )
+
+
+class StartSettlementView(
+    ClaimWorkflowActionView
+):
+    def post(self, request, pk):
+        claim = self.get_claim(pk)
+
+        if claim is None:
+            return Response(
+                {
+                    "error": {
+                        "code": "CLAIM_NOT_FOUND",
+                        "message": "Claim not found.",
+                    }
+                },
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        event = (
+            ClaimWorkflowService
+            .start_settlement(
+                claim=claim,
+                actor=request.user,
+            )
+        )
+
+        return Response(
+            ClaimEventSerializer(event).data,
+            status=status.HTTP_200_OK,
+        )
+
+
+class SettleClaimView(
+    ClaimWorkflowActionView
+):
+    def post(self, request, pk):
+        claim = self.get_claim(pk)
+
+        if claim is None:
+            return Response(
+                {
+                    "error": {
+                        "code": "CLAIM_NOT_FOUND",
+                        "message": "Claim not found.",
+                    }
+                },
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        serializer = ClaimSettlementSerializer(
+            data=request.data
+        )
+
+        serializer.is_valid(
+            raise_exception=True
+        )
+
+        event = (
+            ClaimWorkflowService
+            .settle_claim(
+                claim=claim,
+                actor=request.user,
+                settlement_amount=serializer.validated_data[
+                    "settlement_amount"
+                ],
+                payment_reference=serializer.validated_data[
+                    "payment_reference"
+                ],
+            )
+        )
+
+        return Response(
+            ClaimEventSerializer(event).data,
+            status=status.HTTP_200_OK,
+        )
+
+
+class CloseClaimView(
+    ClaimWorkflowActionView
+):
+    def post(self, request, pk):
+        claim = self.get_claim(pk)
+
+        if claim is None:
+            return Response(
+                {
+                    "error": {
+                        "code": "CLAIM_NOT_FOUND",
+                        "message": "Claim not found.",
+                    }
+                },
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        serializer = ClaimActionCommentSerializer(
+            data=request.data
+        )
+
+        serializer.is_valid(
+            raise_exception=True
+        )
+
+        event = (
+            ClaimWorkflowService
+            .close_claim(
+                claim=claim,
+                actor=request.user,
+                comment=serializer.validated_data.get(
+                    "comment",
+                    "",
+                ),
+            )
+        )
+
+        return Response(
+            ClaimEventSerializer(event).data,
+            status=status.HTTP_200_OK,
+        )
+
+
+class ClaimEventListView(
+    generics.ListAPIView
+):
+    """
+    GET /api/v1/claims/{claim_id}/events/
+    """
+
+    permission_classes = [
+        IsAuthenticated,
+    ]
+
+    serializer_class = ClaimEventSerializer
+
+    def get_queryset(self):
+        return (
+            ClaimEvent.objects
+            .select_related("actor")
+            .filter(
+                claim_id=self.kwargs["claim_id"]
+            )
+        )
+
+
+class ClaimRequirementListView(
+    generics.ListAPIView
+):
+    """
+    GET /api/v1/claims/{claim_id}/requirements/
+    """
+
+    permission_classes = [
+        IsAuthenticated,
+    ]
+
+    serializer_class = (
+        ClaimDocumentRequirementSerializer
+    )
+
+    def get_queryset(self):
+        return (
+            ClaimDocumentRequirement.objects
+            .filter(
+                claim_id=self.kwargs[
+                    "claim_id"
+                ]
+            )
+        )
+
+
+class ClaimSettlementDetailView(
+    generics.RetrieveAPIView
+):
+    """
+    GET /api/v1/claims/{claim_id}/settlement/
+    """
+
+    permission_classes = [
+        IsAuthenticated,
+    ]
+
+    serializer_class = (
+        ClaimSettlementResponseSerializer
+    )
+
+    def get_object(self):
+        return Claim.objects.get(
+            id=self.kwargs["claim_id"]
+        ).settlement
