@@ -24,4 +24,8 @@ urlpatterns = [
             "apps.claims.urls",
         ),
     ),
+    path(
+        "",
+        include("apps.documents.urls"),
+    ),
 ]
