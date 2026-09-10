@@ -28,6 +28,7 @@ class ClaimType(models.TextChoices):
     THEFT = "THEFT", "Theft"
     NATURAL_DISASTER = "NATURAL_DISASTER", "Natural Disaster"
     FIRE = "FIRE", "Fire"
+    DEATH_CLAIM = "DEATH_CLAIM", "Death Claim"
     OTHER = "OTHER", "Other"
 
 

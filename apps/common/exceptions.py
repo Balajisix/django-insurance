@@ -1,3 +1,23 @@
+from rest_framework.response import Response
+from rest_framework.views import exception_handler
+
+
+def api_exception_handler(exc, context):
+    response = exception_handler(exc, context)
+
+    if response is None:
+        return None
+
+    return Response(
+        {
+            "success": False,
+            "status_code": response.status_code,
+            "errors": response.data,
+        },
+        status=response.status_code,
+        headers=response.headers,
+    )
+
 class DomainError(Exception):
     """
     Base exception for business/domain errors.

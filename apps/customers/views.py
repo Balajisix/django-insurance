@@ -14,11 +14,6 @@ from .services import CustomerService
 
 
 class CustomerListCreateView(generics.ListCreateAPIView):
-    """
-    GET  /api/v1/customers/
-    POST /api/v1/customers/
-    """
-
     queryset = Customer.objects.select_related("user").all()
 
     def get_serializer_class(self):
@@ -57,9 +52,5 @@ class CustomerListCreateView(generics.ListCreateAPIView):
 
 
 class CustomerDetailView(generics.RetrieveAPIView):
-    """
-    GET /api/v1/customers/{id}/
-    """
-
     queryset = Customer.objects.select_related("user").all()
     serializer_class = CustomerSerializer

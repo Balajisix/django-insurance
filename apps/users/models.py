@@ -1,3 +1,42 @@
+from django.contrib.auth.models import AbstractUser
 from django.db import models
 
-# Create your models here.
+from .managers import UserManager
+
+
+class UserRole(models.TextChoices):
+    CUSTOMER = "CUSTOMER", "Customer"
+    CLAIMS_OFFICER = "CLAIMS_OFFICER", "Claims Officer"
+    MANAGER = "MANAGER", "Manager"
+    ADMIN = "ADMIN", "Admin"
+
+
+class User(AbstractUser):
+    username = None
+
+    email = models.EmailField(
+        unique=True,
+    )
+
+    role = models.CharField(
+        max_length=30,
+        choices=UserRole.choices,
+        default=UserRole.CUSTOMER,
+    )
+
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+    )
+
+    updated_at = models.DateTimeField(
+        auto_now=True,
+    )
+
+    USERNAME_FIELD = "email"
+
+    REQUIRED_FIELDS = []
+
+    objects = UserManager()
+
+    def __str__(self):
+        return self.email
