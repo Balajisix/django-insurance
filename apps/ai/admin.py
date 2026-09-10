@@ -1,0 +1,60 @@
+from django.contrib import admin
+
+from .models import DocumentExtraction, DocumentProcessingJob
+
+
+@admin.register(DocumentProcessingJob)
+class DocumentProcessingJobAdmin(admin.ModelAdmin):
+    list_display = (
+        "id",
+        "document",
+        "status",
+        "attempt_number",
+        "started_at",
+        "completed_at",
+        "created_by",
+        "created_at",
+    )
+
+    list_filter = (
+        "status",
+        "created_at",
+    )
+
+    search_fields = (
+        "document__original_file_name",
+        "document__s3_key",
+        "error_message",
+    )
+
+    readonly_fields = (
+        "created_at",
+        "updated_at",
+    )
+
+
+@admin.register(DocumentExtraction)
+class DocumentExtractionAdmin(admin.ModelAdmin):
+    list_display = (
+        "id",
+        "document",
+        "extraction_method",
+        "extractor_version",
+        "character_count",
+        "extracted_at",
+    )
+
+    list_filter = (
+        "extraction_method",
+        "extractor_version",
+    )
+
+    search_fields = (
+        "document__original_file_name",
+        "extracted_text",
+    )
+
+    readonly_fields = (
+        "extracted_at",
+        "updated_at",
+    )

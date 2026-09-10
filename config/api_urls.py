@@ -28,4 +28,8 @@ urlpatterns = [
         "",
         include("apps.documents.urls"),
     ),
+    path(
+    "ai/",
+    include("apps.ai.urls"),
+),
 ]

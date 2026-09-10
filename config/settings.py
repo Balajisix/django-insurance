@@ -57,6 +57,7 @@ INSTALLED_APPS = [
     'apps.policies.apps.PoliciesConfig',
     'apps.claims.apps.ClaimsConfig',
     'apps.documents.apps.DocumentsConfig',
+    'apps.ai.apps.AiConfig',
 ]
 
 MIDDLEWARE = [
