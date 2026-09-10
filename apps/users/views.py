@@ -1,5 +1,4 @@
 from rest_framework import status
-from rest_framework.authtoken.models import Token
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -66,14 +65,12 @@ class RegisterView(APIView):
             )
         )
 
-        response_data = {
-            "user": user,
-            "customer": customer,
-        }
-
         response_serializer = (
             RegistrationResponseSerializer(
-                response_data
+                {
+                    "user": user,
+                    "customer": customer,
+                }
             )
         )
 
@@ -111,14 +108,12 @@ class LoginView(APIView):
             )
         )
 
-        response_data = {
-            "token": token.key,
-            "user": user,
-        }
-
         response_serializer = (
             LoginResponseSerializer(
-                response_data
+                {
+                    "token": token.key,
+                    "user": user,
+                }
             )
         )
 
