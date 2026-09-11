@@ -8,6 +8,7 @@ djangorestframework==3.18.1
 jmespath==1.1.0
 psycopg==3.3.5
 psycopg-binary==3.3.5
+pypdf==6.18.0
 python-dateutil==2.9.0.post0
 s3transfer==0.19.2
 six==1.17.0

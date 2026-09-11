@@ -27,6 +27,19 @@ class DocumentProcessingStartView(APIView):
                 created_by=request.user,
             )
 
+            try:
+                job = DocumentProcessingService.process_document(
+                    job_id=job.id,
+                )
+            except Exception:
+                job.refresh_from_db()
+                serializer = DocumentProcessingJobSerializer(job)
+
+                return Response(
+                    serializer.data,
+                    status=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                )
+
             serializer = DocumentProcessingJobSerializer(job)
 
             return Response(
@@ -58,7 +71,10 @@ class DocumentProcessingJobListView(APIView):
         jobs = (
             DocumentProcessingJob.objects
             .filter(document_id=document_id)
-            .select_related("document", "created_by")
+            .select_related(
+                "document",
+                "created_by",
+            )
             .order_by("-created_at")
         )
 
@@ -92,6 +108,8 @@ class DocumentExtractionDetailView(APIView):
                 status=status.HTTP_404_NOT_FOUND,
             )
 
-        serializer = DocumentExtractionSerializer(extraction)
+        serializer = DocumentExtractionSerializer(
+            extraction
+        )
 
         return Response(serializer.data)
