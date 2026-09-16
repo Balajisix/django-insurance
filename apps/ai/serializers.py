@@ -152,3 +152,54 @@ class DocumentSearchSerializer(
         allow_null=True,
         min_value=1,
     )
+
+class RAGQuerySerializer(
+    serializers.Serializer
+):
+    question = serializers.CharField(
+        max_length=2000,
+    )
+
+    claim_id = serializers.IntegerField(
+        required=False,
+        allow_null=True,
+        min_value=1,
+    )
+
+    top_k = serializers.IntegerField(
+        required=False,
+        default=5,
+        min_value=1,
+        max_value=10,
+    )
+
+class RAGSourceSerializer(
+    serializers.Serializer
+):
+    chunk_id = serializers.IntegerField()
+
+    document_id = serializers.IntegerField()
+
+    document_name = serializers.CharField()
+
+    document_type = serializers.CharField()
+
+    chunk_index = serializers.IntegerField()
+
+    score = serializers.FloatField()
+
+
+class RAGResponseSerializer(
+    serializers.Serializer
+):
+    question = serializers.CharField()
+
+    claim_id = serializers.IntegerField(
+        allow_null=True,
+    )
+
+    answer = serializers.CharField()
+
+    sources = RAGSourceSerializer(
+        many=True
+    )

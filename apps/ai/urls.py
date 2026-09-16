@@ -7,7 +7,8 @@ from .views import (
     DocumentChunkListView,
     DocumentChunkingView,
     DocumentEmbeddingView,
-    DocumentSearchView
+    DocumentSearchView,
+    RAGQueryView
 )
 
 
@@ -46,5 +47,10 @@ urlpatterns = [
         "search/",
         DocumentSearchView.as_view(),
         name="document-search",
-    )
+    ),
+    path(
+        "rag/query/",
+        RAGQueryView.as_view(),
+        name="rag-query",
+    ),
 ]

@@ -216,3 +216,8 @@ HF_EMBEDDING_MODEL = env(
     "HF_EMBEDDING_MODEL",
     default="sentence-transformers/all-MiniLM-L6-v2",
 )
+
+HF_LLM_MODEL = env(
+    "HF_LLM_MODEL",
+    default="openai/gpt-oss-120b:fastest",
+)

@@ -12,12 +12,14 @@ from .serializers import (
     DocumentChunkSerializer,
     DocumentEmbeddingSerializer,
     DocumentSearchSerializer,
+    RAGQuerySerializer
 )
 from .services import (
     DocumentProcessingService, 
     DocumentChunkingService, 
     DocumentEmbeddingService,
-    DocumentRetrievalService
+    DocumentRetrievalService,
+    RAGService
 )
 
 
@@ -256,6 +258,59 @@ class DocumentSearchView(APIView):
                     ),
                     "results": results,
                 }
+            )
+
+        except ValueError as exc:
+            return Response(
+                {
+                    "detail": str(exc)
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+class RAGQueryView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+
+        request_serializer = (
+            RAGQuerySerializer(
+                data=request.data
+            )
+        )
+
+        request_serializer.is_valid(
+            raise_exception=True
+        )
+
+        data = (
+            request_serializer
+            .validated_data
+        )
+
+        try:
+            service = RAGService()
+
+            result = service.answer(
+                question=data["question"],
+                claim_id=data.get(
+                    "claim_id"
+                ),
+                top_k=data["top_k"],
+            )
+
+            response_data = {
+                "question": data["question"],
+                "claim_id": data.get(
+                    "claim_id"
+                ),
+                "answer": result["answer"],
+                "sources": result["sources"],
+            }
+
+            return Response(
+                response_data,
+                status=status.HTTP_200_OK,
             )
 
         except ValueError as exc:
