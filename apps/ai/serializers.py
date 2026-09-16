@@ -96,3 +96,39 @@ class DocumentChunkSerializer(
             "created_at",
             "updated_at",
         ]
+
+class DocumentEmbeddingSerializer(
+    serializers.ModelSerializer
+):
+    document_id = serializers.IntegerField(
+        source="document.id",
+        read_only=True,
+    )
+
+    document_name = serializers.CharField(
+        source="document.original_file_name",
+        read_only=True,
+    )
+
+    has_embedding = serializers.SerializerMethodField()
+
+    class Meta:
+        model = DocumentChunk
+
+        fields = [
+            "id",
+            "document_id",
+            "document_name",
+            "chunk_index",
+            "character_count",
+            "embedding_model",
+            "embedded_at",
+            "faiss_index_id",
+            "has_embedding",
+        ]
+
+    def get_has_embedding(self, obj):
+        return (
+            obj.faiss_index_id is not None
+            and obj.embedding_model != ""
+        )

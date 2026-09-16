@@ -206,3 +206,13 @@ TESSERACT_CMD = env(
     "TESSERACT_CMD",
     default="",
 )
+
+# Hugging Face API Configuration
+HF_API_TOKEN = env(
+    "HF_API_TOKEN",
+)
+
+HF_EMBEDDING_MODEL = env(
+    "HF_EMBEDDING_MODEL",
+    default="sentence-transformers/all-MiniLM-L6-v2",
+)

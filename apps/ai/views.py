@@ -9,9 +9,10 @@ from .models import DocumentExtraction, DocumentProcessingJob, DocumentChunk
 from .serializers import (
     DocumentExtractionSerializer,
     DocumentProcessingJobSerializer,
-    DocumentChunkSerializer
+    DocumentChunkSerializer,
+    DocumentEmbeddingSerializer
 )
-from .services import DocumentProcessingService, DocumentChunkingService
+from .services import DocumentProcessingService, DocumentChunkingService, DocumentEmbeddingService
 
 
 class DocumentProcessingStartView(APIView):
@@ -169,3 +170,43 @@ class DocumentChunkListView(APIView):
                 "chunks": serializer.data,
             }
         )
+
+class DocumentEmbeddingView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, document_id):
+        try:
+            service = DocumentEmbeddingService()
+
+            chunks = service.embed_document(
+                document_id=document_id
+            )
+
+            serializer = (
+                DocumentEmbeddingSerializer(
+                    chunks,
+                    many=True,
+                )
+            )
+
+            return Response(
+                {
+                    "document_id": document_id,
+                    "embedded_chunk_count": len(
+                        chunks
+                    ),
+                    "model": (
+                        service.provider.MODEL_NAME
+                    ),
+                    "chunks": serializer.data,
+                },
+                status=status.HTTP_201_CREATED,
+            )
+
+        except ValueError as exc:
+            return Response(
+                {
+                    "detail": str(exc)
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )

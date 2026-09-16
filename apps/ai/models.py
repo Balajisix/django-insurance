@@ -138,10 +138,8 @@ class DocumentExtraction(models.Model):
 
 class DocumentChunk(models.Model):
     """
-    A searchable chunk generated from a document's extracted text.
-
-    Chunks are the units we will later embed and store for
-    semantic/vector search.
+    A searchable chunk generated from a document's
+    extracted text.
     """
 
     document = models.ForeignKey(
@@ -164,6 +162,23 @@ class DocumentChunk(models.Model):
 
     end_character = models.PositiveIntegerField(
         default=0,
+    )
+
+    embedding_model = models.CharField(
+        max_length=150,
+        blank=True,
+        default="",
+    )
+
+    embedded_at = models.DateTimeField(
+        null=True,
+        blank=True,
+    )
+
+    faiss_index_id = models.IntegerField(
+        null=True,
+        blank=True,
+        unique=True,
     )
 
     created_at = models.DateTimeField(

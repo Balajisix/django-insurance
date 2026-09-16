@@ -6,6 +6,7 @@ from .views import (
     DocumentProcessingStartView,
     DocumentChunkListView,
     DocumentChunkingView,
+    DocumentEmbeddingView
 )
 
 
@@ -34,5 +35,10 @@ urlpatterns = [
         "documents/<int:document_id>/chunks/list/",
         DocumentChunkListView.as_view(),
         name="document-chunk-list",
+    ),
+    path(
+        "documents/<int:document_id>/embeddings/",
+        DocumentEmbeddingView.as_view(),
+        name="document-embeddings",
     ),
 ]
