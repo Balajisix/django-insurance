@@ -4,6 +4,8 @@ from .views import (
     DocumentExtractionDetailView,
     DocumentProcessingJobListView,
     DocumentProcessingStartView,
+    DocumentChunkListView,
+    DocumentChunkingView,
 )
 
 
@@ -22,5 +24,15 @@ urlpatterns = [
         "documents/<int:document_id>/extraction/",
         DocumentExtractionDetailView.as_view(),
         name="document-extraction-detail",
+    ),
+    path(
+        "documents/<int:document_id>/chunks/",
+        DocumentChunkingView.as_view(),
+        name="document-chunking",
+    ),
+    path(
+        "documents/<int:document_id>/chunks/list/",
+        DocumentChunkListView.as_view(),
+        name="document-chunk-list",
     ),
 ]

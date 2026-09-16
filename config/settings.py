@@ -200,3 +200,9 @@ STORAGES = {
         ),
     },
 }
+
+# Tesseract OCR Configuration
+TESSERACT_CMD = env(
+    "TESSERACT_CMD",
+    default="",
+)

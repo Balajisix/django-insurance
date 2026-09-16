@@ -5,12 +5,13 @@ from rest_framework.views import APIView
 
 from apps.documents.models import ClaimDocument
 
-from .models import DocumentExtraction, DocumentProcessingJob
+from .models import DocumentExtraction, DocumentProcessingJob, DocumentChunk
 from .serializers import (
     DocumentExtractionSerializer,
     DocumentProcessingJobSerializer,
+    DocumentChunkSerializer
 )
-from .services import DocumentProcessingService
+from .services import DocumentProcessingService, DocumentChunkingService
 
 
 class DocumentProcessingStartView(APIView):
@@ -113,3 +114,58 @@ class DocumentExtractionDetailView(APIView):
         )
 
         return Response(serializer.data)
+
+class DocumentChunkingView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, document_id):
+        try:
+            chunks = DocumentChunkingService.create_chunks(
+                document_id=document_id,
+            )
+
+            serializer = DocumentChunkSerializer(
+                chunks,
+                many=True,
+            )
+
+            return Response(
+                {
+                    "document_id": document_id,
+                    "chunk_count": len(chunks),
+                    "chunks": serializer.data,
+                },
+                status=status.HTTP_201_CREATED,
+            )
+
+        except ValueError as exc:
+            return Response(
+                {
+                    "detail": str(exc)
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+
+class DocumentChunkListView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, document_id):
+        chunks = (
+            DocumentChunk.objects
+            .filter(document_id=document_id)
+            .order_by("chunk_index")
+        )
+
+        serializer = DocumentChunkSerializer(
+            chunks,
+            many=True,
+        )
+
+        return Response(
+            {
+                "document_id": document_id,
+                "chunk_count": chunks.count(),
+                "chunks": serializer.data,
+            }
+        )

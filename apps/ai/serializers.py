@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from .models import DocumentExtraction, DocumentProcessingJob
+from .models import DocumentExtraction, DocumentProcessingJob, DocumentChunk
 
 
 class DocumentProcessingJobSerializer(serializers.ModelSerializer):
@@ -59,5 +59,40 @@ class DocumentExtractionSerializer(serializers.ModelSerializer):
             "extractor_version",
             "character_count",
             "extracted_at",
+            "updated_at",
+        ]
+
+class DocumentChunkSerializer(
+    serializers.ModelSerializer
+):
+    document_id = serializers.IntegerField(
+        source="document.id",
+        read_only=True,
+    )
+
+    document_name = serializers.CharField(
+        source="document.original_file_name",
+        read_only=True,
+    )
+
+    claim_id = serializers.IntegerField(
+        source="document.claim.id",
+        read_only=True,
+    )
+
+    class Meta:
+        model = DocumentChunk
+
+        fields = [
+            "id",
+            "document_id",
+            "document_name",
+            "claim_id",
+            "chunk_index",
+            "text",
+            "character_count",
+            "start_character",
+            "end_character",
+            "created_at",
             "updated_at",
         ]

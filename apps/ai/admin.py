@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import DocumentExtraction, DocumentProcessingJob
+from .models import DocumentExtraction, DocumentProcessingJob, DocumentChunk
 
 
 @admin.register(DocumentProcessingJob)
@@ -56,5 +56,31 @@ class DocumentExtractionAdmin(admin.ModelAdmin):
 
     readonly_fields = (
         "extracted_at",
+        "updated_at",
+    )
+
+@admin.register(DocumentChunk)
+class DocumentChunkAdmin(admin.ModelAdmin):
+    list_display = (
+        "id",
+        "document",
+        "chunk_index",
+        "character_count",
+        "start_character",
+        "end_character",
+        "created_at",
+    )
+
+    list_filter = (
+        "created_at",
+    )
+
+    search_fields = (
+        "document__original_file_name",
+        "text",
+    )
+
+    readonly_fields = (
+        "created_at",
         "updated_at",
     )

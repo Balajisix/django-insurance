@@ -20,9 +20,6 @@ class ExtractionMethod(models.TextChoices):
 class DocumentProcessingJob(models.Model):
     """
     Represents one attempt to process a claim document.
-
-    A document can have multiple processing jobs because a failed
-    processing attempt may be retried later.
     """
 
     document = models.ForeignKey(
@@ -137,3 +134,73 @@ class DocumentExtraction(models.Model):
 
     def __str__(self):
         return f"Extraction(document_id={self.document_id})"
+
+
+class DocumentChunk(models.Model):
+    """
+    A searchable chunk generated from a document's extracted text.
+
+    Chunks are the units we will later embed and store for
+    semantic/vector search.
+    """
+
+    document = models.ForeignKey(
+        ClaimDocument,
+        on_delete=models.CASCADE,
+        related_name="chunks",
+    )
+
+    chunk_index = models.PositiveIntegerField()
+
+    text = models.TextField()
+
+    character_count = models.PositiveIntegerField(
+        default=0,
+    )
+
+    start_character = models.PositiveIntegerField(
+        default=0,
+    )
+
+    end_character = models.PositiveIntegerField(
+        default=0,
+    )
+
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+    )
+
+    updated_at = models.DateTimeField(
+        auto_now=True,
+    )
+
+    class Meta:
+        ordering = ["chunk_index"]
+
+        constraints = [
+            models.UniqueConstraint(
+                fields=[
+                    "document",
+                    "chunk_index",
+                ],
+                name="unique_document_chunk_index",
+            ),
+        ]
+
+        indexes = [
+            models.Index(
+                fields=[
+                    "document",
+                    "chunk_index",
+                ],
+                name="ai_chunk_doc_index_idx",
+            ),
+        ]
+
+    def __str__(self):
+        return (
+            f"DocumentChunk("
+            f"document_id={self.document_id}, "
+            f"chunk_index={self.chunk_index}"
+            f")"
+        )
