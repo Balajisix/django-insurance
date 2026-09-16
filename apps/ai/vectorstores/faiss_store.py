@@ -7,20 +7,20 @@ from django.conf import settings
 
 class FAISSVectorStore:
     """
-    FAISS vector store for semantic similarity search.
+    Persistent FAISS vector store.
 
-    We use:
-        IndexFlatIP
-
-    with normalized vectors, which gives cosine similarity.
+    Uses normalized vectors + IndexFlatIP,
+    which provides cosine-similarity search.
     """
 
     INDEX_FILENAME = "claims.index"
 
     def __init__(self):
-        self.storage_dir = Path(
-            settings.BASE_DIR
-        ) / "storage" / "faiss"
+        self.storage_dir = (
+            Path(settings.BASE_DIR)
+            / "storage"
+            / "faiss"
+        )
 
         self.storage_dir.mkdir(
             parents=True,
@@ -28,8 +28,8 @@ class FAISSVectorStore:
         )
 
         self.index_path = (
-            self.storage_dir /
-            self.INDEX_FILENAME
+            self.storage_dir
+            / self.INDEX_FILENAME
         )
 
         self.index = None
@@ -42,10 +42,7 @@ class FAISSVectorStore:
                 str(self.index_path)
             )
 
-    def _create_index(
-        self,
-        dimension: int,
-    ):
+    def _create_index(self, dimension: int):
         self.index = faiss.IndexIDMap(
             faiss.IndexFlatIP(dimension)
         )
@@ -69,6 +66,16 @@ class FAISSVectorStore:
             dtype="float32",
         )
 
+        if matrix.ndim != 2:
+            raise ValueError(
+                "Vectors must be a 2D matrix."
+            )
+
+        if matrix.shape[0] != len(ids):
+            raise ValueError(
+                "Vector count does not match ID count."
+            )
+
         faiss.normalize_L2(matrix)
 
         if self.index is None:
@@ -76,12 +83,24 @@ class FAISSVectorStore:
                 matrix.shape[1]
             )
 
+        if self.index.d != matrix.shape[1]:
+            raise ValueError(
+                "Embedding dimension does not match "
+                "the existing FAISS index."
+            )
+
+        ids_array = np.asarray(
+            ids,
+            dtype="int64",
+        )
+
+        # Replace existing vectors with the
+        # same IDs.
+        self.index.remove_ids(ids_array)
+
         self.index.add_with_ids(
             matrix,
-            np.asarray(
-                ids,
-                dtype="int64",
-            ),
+            ids_array,
         )
 
         self.save()
@@ -90,20 +109,48 @@ class FAISSVectorStore:
         self,
         query_vector: list[float],
         top_k: int = 5,
-    ):
+    ) -> list[dict]:
+        """
+        Search for the most similar vectors.
+        """
+
         if self.index is None:
             return []
+
+        if self.index.ntotal == 0:
+            return []
+
+        if top_k <= 0:
+            raise ValueError(
+                "top_k must be greater than zero."
+            )
 
         query = np.asarray(
             [query_vector],
             dtype="float32",
         )
 
+        if query.ndim != 2:
+            raise ValueError(
+                "Query vector must be a 2D array."
+            )
+
+        if query.shape[1] != self.index.d:
+            raise ValueError(
+                "Query embedding dimension does not "
+                "match the FAISS index."
+            )
+
         faiss.normalize_L2(query)
+
+        search_k = min(
+            top_k,
+            self.index.ntotal,
+        )
 
         scores, ids = self.index.search(
             query,
-            top_k,
+            search_k,
         )
 
         results = []
@@ -117,7 +164,9 @@ class FAISSVectorStore:
 
             results.append(
                 {
-                    "faiss_index_id": int(index_id),
+                    "faiss_index_id": int(
+                        index_id
+                    ),
                     "score": float(score),
                 }
             )

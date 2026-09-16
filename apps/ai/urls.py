@@ -6,7 +6,8 @@ from .views import (
     DocumentProcessingStartView,
     DocumentChunkListView,
     DocumentChunkingView,
-    DocumentEmbeddingView
+    DocumentEmbeddingView,
+    DocumentSearchView
 )
 
 
@@ -41,4 +42,9 @@ urlpatterns = [
         DocumentEmbeddingView.as_view(),
         name="document-embeddings",
     ),
+    path(
+        "search/",
+        DocumentSearchView.as_view(),
+        name="document-search",
+    )
 ]

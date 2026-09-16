@@ -132,3 +132,23 @@ class DocumentEmbeddingSerializer(
             obj.faiss_index_id is not None
             and obj.embedding_model != ""
         )
+    
+class DocumentSearchSerializer(
+    serializers.Serializer
+):
+    query = serializers.CharField(
+        max_length=1000
+    )
+
+    top_k = serializers.IntegerField(
+        required=False,
+        default=5,
+        min_value=1,
+        max_value=20,
+    )
+
+    claim_id = serializers.IntegerField(
+        required=False,
+        allow_null=True,
+        min_value=1,
+    )

@@ -10,9 +10,15 @@ from .serializers import (
     DocumentExtractionSerializer,
     DocumentProcessingJobSerializer,
     DocumentChunkSerializer,
-    DocumentEmbeddingSerializer
+    DocumentEmbeddingSerializer,
+    DocumentSearchSerializer,
 )
-from .services import DocumentProcessingService, DocumentChunkingService, DocumentEmbeddingService
+from .services import (
+    DocumentProcessingService, 
+    DocumentChunkingService, 
+    DocumentEmbeddingService,
+    DocumentRetrievalService
+)
 
 
 class DocumentProcessingStartView(APIView):
@@ -201,6 +207,55 @@ class DocumentEmbeddingView(APIView):
                     "chunks": serializer.data,
                 },
                 status=status.HTTP_201_CREATED,
+            )
+
+        except ValueError as exc:
+            return Response(
+                {
+                    "detail": str(exc)
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+class DocumentSearchView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+
+        request_serializer = (
+            DocumentSearchSerializer(
+                data=request.data
+            )
+        )
+
+        request_serializer.is_valid(
+            raise_exception=True
+        )
+
+        data = request_serializer.validated_data
+
+        try:
+            service = DocumentRetrievalService()
+
+            results = service.search(
+                query=data["query"],
+                top_k=data["top_k"],
+                claim_id=data.get(
+                    "claim_id"
+                ),
+            )
+
+            return Response(
+                {
+                    "query": data["query"],
+                    "claim_id": data.get(
+                        "claim_id"
+                    ),
+                    "result_count": len(
+                        results
+                    ),
+                    "results": results,
+                }
             )
 
         except ValueError as exc:
