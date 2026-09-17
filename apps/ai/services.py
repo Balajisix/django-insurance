@@ -13,7 +13,8 @@ from .models import (
     DocumentProcessingJob,
     ExtractionMethod,
     ProcessingStatus,
-    DocumentChunk
+    DocumentChunk,
+    DocumentVisualAnalysis
 )
 
 from .chunkers.text import TextChunker
@@ -38,6 +39,9 @@ from apps.claims.models import (
     ClaimDocumentRequirement,
 )
 
+from .vision.huggingface import (
+    HuggingFaceVisionProvider
+)
 
 class DocumentProcessingService:
     """
@@ -241,15 +245,66 @@ class DocumentProcessingService:
     def _extract_document(
         document: ClaimDocument,
     ):
-        """
-        Choose the extraction strategy based
-        on document content type.
-        """
-
         content_type = (
             document.content_type or ""
         ).lower()
 
+        document_type = (
+            document.document_type or ""
+        ).upper()
+
+        # Accident photos → Vision
+        if document_type == "ACCIDENT_PHOTO":
+
+            if content_type not in [
+                "image/jpeg",
+                "image/png",
+            ]:
+                raise ValueError(
+                    "ACCIDENT_PHOTO must be a JPEG or PNG image."
+                )
+
+            analysis_service = (
+                DocumentVisualAnalysisService()
+            )
+
+            analysis = (
+                analysis_service.analyze(
+                    document=document
+                )
+            )
+
+            return (
+                analysis.summary,
+                ExtractionMethod.VISION,
+                (
+                    "huggingface-vision-v1"
+                ),
+            )
+
+        # Other images → OCR
+        if content_type in [
+            "image/jpeg",
+            "image/png",
+        ]:
+
+            extractor = (
+                TesseractOCRExtractor()
+            )
+
+            extracted_text = (
+                extractor.extract_from_storage(
+                    document.s3_key
+                )
+            )
+
+            return (
+                extracted_text,
+                ExtractionMethod.OCR,
+                "tesseract-v1",
+            )
+
+        # PDF → normal PDF extraction
         if content_type == "application/pdf":
 
             extracted_text = (
@@ -263,25 +318,6 @@ class DocumentProcessingService:
                 extracted_text,
                 ExtractionMethod.TEXT,
                 "pypdf-v1",
-            )
-
-        if content_type in [
-            "image/jpeg",
-            "image/png",
-        ]:
-
-            extractor = TesseractOCRExtractor()
-
-            extracted_text = (
-                extractor.extract_from_storage(
-                    document.s3_key
-                )
-            )
-
-            return (
-                extracted_text,
-                ExtractionMethod.OCR,
-                "tesseract-v1",
             )
 
         raise ValueError(
@@ -917,7 +953,7 @@ class ClaimAISummaryService:
                 structured_result
             )
 
-            self.store_ai_missing_information(
+            self._store_ai_missing_information(
                 claim=claim,
                 items=structured_result[
                     "missing_information"
@@ -1858,3 +1894,143 @@ class ClaimAIWorkflowService:
         except Exception:
             claim.refresh_from_db()
             raise
+
+class DocumentVisualAnalysisService:
+    def __init__(self):
+        self.provider = (
+            HuggingFaceVisionProvider()
+        )
+
+    def analyze(
+        self,
+        *,
+        document,
+    ) -> DocumentVisualAnalysis:
+
+        result = self.provider.analyze_storage_image(
+            storage_key=document.s3_key,
+            content_type=document.content_type,
+        )
+
+        summary = self._build_text_representation(
+            result
+        )
+
+        analysis, _ = (
+            DocumentVisualAnalysis.objects
+            .get_or_create(
+                document=document,
+            )
+        )
+
+        analysis.analysis = result
+
+        analysis.summary = summary
+
+        analysis.model_name = (
+            self.provider.MODEL_NAME
+        )
+
+        analysis.analyzed_at = timezone.now()
+
+        analysis.save()
+
+        # Make the visual analysis available to
+        # the existing chunking pipeline.
+        DocumentExtraction.objects.update_or_create(
+            document=document,
+            defaults={
+                "extracted_text": summary,
+                "extraction_method": (
+                    ExtractionMethod.VISION
+                ),
+                "extractor_version": (
+                    "huggingface-vision-v1"
+                ),
+                "character_count": len(summary),
+            },
+        )
+
+        return analysis
+
+    @staticmethod
+    def _build_text_representation(
+        result: dict,
+    ) -> str:
+
+        lines = []
+
+        lines.append(
+            "IMAGE SUMMARY"
+        )
+
+        lines.append(
+            result["image_summary"]
+        )
+
+        lines.append(
+            "\nVEHICLE DETECTED"
+        )
+
+        lines.append(
+            "Yes"
+            if result["vehicle_detected"]
+            else "No"
+        )
+
+        lines.append(
+            "\nDAMAGE AREAS"
+        )
+
+        for item in result[
+            "damage_areas"
+        ]:
+            lines.append(
+                f"- {item}"
+            )
+
+        lines.append(
+            "\nVISIBLE OBJECTS"
+        )
+
+        for item in result[
+            "visible_objects"
+        ]:
+            lines.append(
+                f"- {item}"
+            )
+
+        lines.append(
+            "\nVISIBLE TEXT"
+        )
+
+        for item in result[
+            "visible_text"
+        ]:
+            lines.append(
+                f"- {item}"
+            )
+
+        lines.append(
+            "\nOBSERVATIONS"
+        )
+
+        for item in result[
+            "observations"
+        ]:
+            lines.append(
+                f"- {item}"
+            )
+
+        lines.append(
+            "\nLIMITATIONS"
+        )
+
+        for item in result[
+            "limitations"
+        ]:
+            lines.append(
+                f"- {item}"
+            )
+
+        return "\n".join(lines).strip()

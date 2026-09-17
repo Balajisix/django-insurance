@@ -221,3 +221,8 @@ HF_LLM_MODEL = env(
     "HF_LLM_MODEL",
     default="openai/gpt-oss-120b:fastest",
 )
+
+HF_VISION_MODEL = env(
+    "HF_VISION_MODEL",
+    default="deepseek-ai/DeepSeek-V4-Flash-Vision-Exp",
+)

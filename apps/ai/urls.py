@@ -11,6 +11,7 @@ from .views import (
     DocumentChunkingView,
     DocumentEmbeddingView,
     DocumentSearchView,
+    DocumentVisualAnalysisView,
     MissingDocumentIntelligenceView,
     RAGQueryView,
     ClaimAISummaryView,
@@ -95,5 +96,10 @@ urlpatterns = [
         "claims/<int:claim_id>/process/",
         ClaimAIWorkflowView.as_view(),
         name="claim-ai-workflow",
+    ),
+    path(
+        "documents/<int:document_id>/visual-analysis/",
+        DocumentVisualAnalysisView.as_view(),
+        name="document-visual-analysis",
     ),
 ]

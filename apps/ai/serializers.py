@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from .models import DocumentExtraction, DocumentProcessingJob, DocumentChunk
+from .models import DocumentExtraction, DocumentProcessingJob, DocumentChunk, DocumentVisualAnalysis
 from apps.claims.models import ClaimAIAnalysis, ClaimAIInconsistency, ClaimAIMissingInformation
 
 
@@ -307,3 +307,31 @@ class ClaimAIWorkflowResponseSerializer(
     status = serializers.CharField()
 
     result = serializers.DictField()
+
+class DocumentVisualAnalysisSerializer(
+    serializers.ModelSerializer
+):
+    document_id = serializers.IntegerField(
+        source="document.id",
+        read_only=True,
+    )
+
+    document_name = serializers.CharField(
+        source="document.original_file_name",
+        read_only=True,
+    )
+
+    class Meta:
+        model = DocumentVisualAnalysis
+
+        fields = [
+            "id",
+            "document_id",
+            "document_name",
+            "analysis",
+            "summary",
+            "model_name",
+            "analyzed_at",
+            "created_at",
+            "updated_at",
+        ]

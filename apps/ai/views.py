@@ -5,7 +5,7 @@ from rest_framework.views import APIView
 
 from apps.documents.models import ClaimDocument
 
-from .models import DocumentExtraction, DocumentProcessingJob, DocumentChunk
+from .models import DocumentExtraction, DocumentProcessingJob, DocumentChunk, DocumentVisualAnalysis
 from .serializers import (
     ClaimAIAnalysisSerializer,
     ClaimAIInconsistencySerializer,
@@ -15,6 +15,7 @@ from .serializers import (
     DocumentChunkSerializer,
     DocumentEmbeddingSerializer,
     DocumentSearchSerializer,
+    DocumentVisualAnalysisSerializer,
     RAGQuerySerializer,
     RequiredDocumentStatusSerializer,
     AIMissingInformationSerializer
@@ -616,10 +617,8 @@ class ClaimAIWorkflowView(APIView):
         request,
         claim_id,
     ):
-
         try:
-
-            service_result = (
+            result = (
                 ClaimAIWorkflowService
                 .process_claim_workflow(
                     claim_id=claim_id,
@@ -627,17 +626,39 @@ class ClaimAIWorkflowView(APIView):
                 )
             )
 
+            # Serialize ClaimAIAnalysis model
+            summary = result.get("summary")
+
+            if summary is not None:
+                result["summary"] = (
+                    ClaimAIAnalysisSerializer(
+                        summary
+                    ).data
+                )
+
+            # Serialize ClaimAIInconsistency models
+            inconsistencies = (
+                result.get("inconsistencies")
+            )
+
+            if inconsistencies is not None:
+                result["inconsistencies"] = (
+                    ClaimAIInconsistencySerializer(
+                        inconsistencies,
+                        many=True,
+                    ).data
+                )
+
             return Response(
                 {
                     "claim_id": claim_id,
                     "status": "COMPLETED",
-                    "result": service_result,
+                    "result": result,
                 },
                 status=status.HTTP_200_OK,
             )
 
         except ValueError as exc:
-
             return Response(
                 {
                     "detail": str(exc)
@@ -646,7 +667,6 @@ class ClaimAIWorkflowView(APIView):
             )
 
         except Exception as exc:
-
             return Response(
                 {
                     "detail": (
@@ -658,3 +678,44 @@ class ClaimAIWorkflowView(APIView):
                     status.HTTP_422_UNPROCESSABLE_ENTITY
                 ),
             )
+
+class DocumentVisualAnalysisView(
+    APIView
+):
+    permission_classes = [IsAuthenticated]
+
+    def get(
+        self,
+        request,
+        document_id,
+    ):
+
+        analysis = (
+            DocumentVisualAnalysis.objects
+            .filter(
+                document_id=document_id
+            )
+            .select_related("document")
+            .first()
+        )
+
+        if analysis is None:
+            return Response(
+                {
+                    "detail": (
+                        "No visual analysis "
+                        "is available for this document."
+                    )
+                },
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        serializer = (
+            DocumentVisualAnalysisSerializer(
+                analysis
+            )
+        )
+
+        return Response(
+            serializer.data
+        )

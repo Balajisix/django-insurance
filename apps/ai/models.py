@@ -10,10 +10,10 @@ class ProcessingStatus(models.TextChoices):
     COMPLETED = "COMPLETED", "Completed"
     FAILED = "FAILED", "Failed"
 
-
 class ExtractionMethod(models.TextChoices):
     TEXT = "TEXT", "Direct Text Extraction"
     OCR = "OCR", "Optical Character Recognition"
+    VISION = "VISION", "Visual Analysis"
     OTHER = "OTHER", "Other"
 
 
@@ -217,5 +217,48 @@ class DocumentChunk(models.Model):
             f"DocumentChunk("
             f"document_id={self.document_id}, "
             f"chunk_index={self.chunk_index}"
+            f")"
+        )
+
+class DocumentVisualAnalysis(models.Model):
+    document = models.OneToOneField(
+        ClaimDocument,
+        on_delete=models.CASCADE,
+        related_name="visual_analysis",
+    )
+
+    analysis = models.JSONField(
+        default=dict,
+        blank=True,
+    )
+
+    summary = models.TextField(
+        blank=True,
+        default="",
+    )
+
+    model_name = models.CharField(
+        max_length=150,
+        blank=True,
+        default="",
+    )
+
+    analyzed_at = models.DateTimeField(
+        null=True,
+        blank=True,
+    )
+
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+    )
+
+    updated_at = models.DateTimeField(
+        auto_now=True,
+    )
+
+    def __str__(self):
+        return (
+            f"DocumentVisualAnalysis("
+            f"document_id={self.document_id}"
             f")"
         )
