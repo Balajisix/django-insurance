@@ -298,3 +298,12 @@ class ClaimAIIntelligenceSerializer(
     documents = serializers.DictField()
 
     inconsistencies = serializers.ListField()
+
+class ClaimAIWorkflowResponseSerializer(
+    serializers.Serializer
+):
+    claim_id = serializers.IntegerField()
+
+    status = serializers.CharField()
+
+    result = serializers.DictField()

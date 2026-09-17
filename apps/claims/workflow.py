@@ -345,3 +345,29 @@ class ClaimWorkflowService:
                     + ", ".join(missing_types)
                 )
             )
+
+    @classmethod
+    def start_ai_processing(
+        cls,
+        *,
+        claim,
+        actor,
+    ):
+        return cls.transition(
+            claim=claim,
+            to_status=ClaimStatus.DOCUMENT_PROCESSING,
+            actor=actor,
+        )
+
+    @classmethod
+    def complete_ai_processing(
+        cls,
+        *,
+        claim,
+        actor,
+    ):
+        return cls.transition(
+            claim=claim,
+            to_status=ClaimStatus.UNDER_REVIEW,
+            actor=actor,
+        )

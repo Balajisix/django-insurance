@@ -22,6 +22,7 @@ from .serializers import (
 from .services import (
     ClaimAIIntelligenceService,
     ClaimAISummaryService,
+    ClaimAIWorkflowService,
     ClaimInconsistencyService,
     DocumentProcessingService, 
     DocumentChunkingService, 
@@ -605,4 +606,55 @@ class ClaimAIIntelligenceView(APIView):
                     "detail": str(exc)
                 },
                 status=status.HTTP_404_NOT_FOUND,
+            )
+
+class ClaimAIWorkflowView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(
+        self,
+        request,
+        claim_id,
+    ):
+
+        try:
+
+            service_result = (
+                ClaimAIWorkflowService
+                .process_claim_workflow(
+                    claim_id=claim_id,
+                    actor=request.user,
+                )
+            )
+
+            return Response(
+                {
+                    "claim_id": claim_id,
+                    "status": "COMPLETED",
+                    "result": service_result,
+                },
+                status=status.HTTP_200_OK,
+            )
+
+        except ValueError as exc:
+
+            return Response(
+                {
+                    "detail": str(exc)
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        except Exception as exc:
+
+            return Response(
+                {
+                    "detail": (
+                        "AI claim processing failed."
+                    ),
+                    "error": str(exc),
+                },
+                status=(
+                    status.HTTP_422_UNPROCESSABLE_ENTITY
+                ),
             )

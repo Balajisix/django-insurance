@@ -2,6 +2,7 @@ from django.urls import path
 
 from .views import (
     ClaimAIIntelligenceView,
+    ClaimAIWorkflowView,
     ClaimInconsistencyListView,
     DocumentExtractionDetailView,
     DocumentProcessingJobListView,
@@ -89,5 +90,10 @@ urlpatterns = [
         "claims/<int:claim_id>/intelligence/",
         ClaimAIIntelligenceView.as_view(),
         name="claim-ai-intelligence",
+    ),
+    path(
+        "claims/<int:claim_id>/process/",
+        ClaimAIWorkflowView.as_view(),
+        name="claim-ai-workflow",
     ),
 ]
