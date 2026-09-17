@@ -1,6 +1,7 @@
 from django.urls import path
 
 from .views import (
+    ClaimInconsistencyListView,
     DocumentExtractionDetailView,
     DocumentProcessingJobListView,
     DocumentProcessingStartView,
@@ -11,7 +12,8 @@ from .views import (
     MissingDocumentIntelligenceView,
     RAGQueryView,
     ClaimAISummaryView,
-    ClaimAISummaryDetailView
+    ClaimAISummaryDetailView,
+    ClaimInconsistencyAnalysisView,
 )
 
 
@@ -70,5 +72,16 @@ urlpatterns = [
         "claims/<int:claim_id>/missing-documents/",
         MissingDocumentIntelligenceView.as_view(),
         name="missing-document-intelligence",
+    ),
+    path(
+        "claims/<int:claim_id>/inconsistencies/analyze/",
+        ClaimInconsistencyAnalysisView.as_view(),
+        name="claim-inconsistency-analysis",
+    ),
+
+    path(
+        "claims/<int:claim_id>/inconsistencies/",
+        ClaimInconsistencyListView.as_view(),
+        name="claim-inconsistency-list",
     ),  
 ]

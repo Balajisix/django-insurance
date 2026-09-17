@@ -1,7 +1,7 @@
 from rest_framework import serializers
 
 from .models import DocumentExtraction, DocumentProcessingJob, DocumentChunk
-from apps.claims.models import ClaimAIAnalysis, ClaimAIMissingInformation
+from apps.claims.models import ClaimAIAnalysis, ClaimAIInconsistency, ClaimAIMissingInformation
 
 
 class DocumentProcessingJobSerializer(serializers.ModelSerializer):
@@ -258,4 +258,28 @@ class AIMissingInformationSerializer(
             "is_resolved",
             "resolved_at",
             "created_at",
+        ]
+
+class ClaimAIInconsistencySerializer(
+    serializers.ModelSerializer
+):
+    claim_number = serializers.CharField(
+        source="claim.claim_number",
+        read_only=True,
+    )
+
+    class Meta:
+        model = ClaimAIInconsistency
+        fields = [
+            "id",
+            "claim_number",
+            "inconsistency_type",
+            "severity",
+            "description",
+            "source_documents",
+            "requires_human_review",
+            "is_resolved",
+            "resolved_at",
+            "created_at",
+            "updated_at",
         ]

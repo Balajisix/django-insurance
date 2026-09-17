@@ -6,7 +6,8 @@ from .models import (
     ClaimEvent,
     ClaimSettlement,
     ClaimAIAnalysis,
-    ClaimAIMissingInformation
+    ClaimAIMissingInformation,
+    ClaimAIInconsistency
 )
 
 
@@ -195,6 +196,38 @@ class ClaimAIMissingInformationAdmin(
         "claim__claim_number",
         "description",
         "document_type",
+    )
+
+    readonly_fields = (
+        "created_at",
+        "updated_at",
+    )
+
+@admin.register(ClaimAIInconsistency)
+class ClaimAIInconsistencyAdmin(
+    admin.ModelAdmin
+):
+    list_display = (
+        "id",
+        "claim",
+        "inconsistency_type",
+        "severity",
+        "requires_human_review",
+        "is_resolved",
+        "created_at",
+    )
+
+    list_filter = (
+        "inconsistency_type",
+        "severity",
+        "requires_human_review",
+        "is_resolved",
+        "created_at",
+    )
+
+    search_fields = (
+        "claim__claim_number",
+        "description",
     )
 
     readonly_fields = (

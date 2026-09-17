@@ -8,6 +8,7 @@ from apps.documents.models import ClaimDocument
 from .models import DocumentExtraction, DocumentProcessingJob, DocumentChunk
 from .serializers import (
     ClaimAIAnalysisSerializer,
+    ClaimAIInconsistencySerializer,
     DocumentExtractionSerializer,
     DocumentProcessingJobSerializer,
     DocumentChunkSerializer,
@@ -19,6 +20,7 @@ from .serializers import (
 )
 from .services import (
     ClaimAISummaryService,
+    ClaimInconsistencyService,
     DocumentProcessingService, 
     DocumentChunkingService, 
     DocumentEmbeddingService,
@@ -27,7 +29,7 @@ from .services import (
     MissingDocumentService
 )
 
-from apps.claims.models import ClaimAIAnalysis, Claim, ClaimAIMissingInformation
+from apps.claims.models import ClaimAIAnalysis, Claim, ClaimAIInconsistency, ClaimAIMissingInformation
 
 
 class DocumentProcessingStartView(APIView):
@@ -472,6 +474,97 @@ class MissingDocumentIntelligenceView(APIView):
                 ),
                 "ai_observed_missing_information": (
                     ai_serializer.data
+                ),
+            }
+        )
+
+class ClaimInconsistencyAnalysisView(
+    APIView
+):
+    permission_classes = [IsAuthenticated]
+
+    def post(
+        self,
+        request,
+        claim_id,
+    ):
+
+        try:
+            service = (
+                ClaimInconsistencyService()
+            )
+
+            inconsistencies = (
+                service.analyze(
+                    claim_id=claim_id,
+                )
+            )
+
+            serializer = (
+                ClaimAIInconsistencySerializer(
+                    inconsistencies,
+                    many=True,
+                )
+            )
+
+            return Response(
+                {
+                    "claim_id": claim_id,
+                    "inconsistency_count": (
+                        len(inconsistencies)
+                    ),
+                    "inconsistencies": (
+                        serializer.data
+                    ),
+                },
+                status=status.HTTP_200_OK,
+            )
+
+        except ValueError as exc:
+            return Response(
+                {
+                    "detail": str(exc)
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+class ClaimInconsistencyListView(
+    APIView
+):
+    permission_classes = [IsAuthenticated]
+
+    def get(
+        self,
+        request,
+        claim_id,
+    ):
+
+        inconsistencies = (
+            ClaimAIInconsistency.objects
+            .filter(
+                claim_id=claim_id,
+                is_resolved=False,
+            )
+            .order_by(
+                "-created_at"
+            )
+        )
+
+        serializer = (
+            ClaimAIInconsistencySerializer(
+                inconsistencies,
+                many=True,
+            )
+        )
+
+        return Response(
+            {
+                "claim_id": claim_id,
+                "inconsistency_count": (
+                    inconsistencies.count()
+                ),
+                "inconsistencies": (
+                    serializer.data
                 ),
             }
         )

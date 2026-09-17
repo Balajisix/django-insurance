@@ -74,6 +74,43 @@ class MissingInformationSource(models.TextChoices):
     BUSINESS_RULE = "BUSINESS_RULE", "Business Rule"
     AI_OBSERVATION = "AI_OBSERVATION", "AI Observation"
 
+class InconsistencySeverity(models.TextChoices):
+    LOW = "LOW", "Low"
+    MEDIUM = "MEDIUM", "Medium"
+    HIGH = "HIGH", "High"
+
+
+class InconsistencyType(models.TextChoices):
+    DATE_DISCREPANCY = (
+        "DATE_DISCREPANCY",
+        "Date Discrepancy",
+    )
+
+    AMOUNT_DISCREPANCY = (
+        "AMOUNT_DISCREPANCY",
+        "Amount Discrepancy",
+    )
+
+    IDENTIFIER_DISCREPANCY = (
+        "IDENTIFIER_DISCREPANCY",
+        "Identifier Discrepancy",
+    )
+
+    DESCRIPTION_DISCREPANCY = (
+        "DESCRIPTION_DISCREPANCY",
+        "Description Discrepancy",
+    )
+
+    CONFLICTING_INFORMATION = (
+        "CONFLICTING_INFORMATION",
+        "Conflicting Information",
+    )
+
+    OTHER = (
+        "OTHER",
+        "Other",
+    )
+
 class Claim(models.Model):
     """
     Represents an insurance claim raised against a policy.
@@ -438,5 +475,72 @@ class ClaimAIMissingInformation(models.Model):
             f"ClaimAIMissingInformation("
             f"claim_id={self.claim_id}, "
             f"source={self.source}"
+            f")"
+        )
+
+class ClaimAIInconsistency(models.Model):
+    claim = models.ForeignKey(
+        Claim,
+        on_delete=models.CASCADE,
+        related_name="ai_inconsistencies",
+    )
+
+    inconsistency_type = models.CharField(
+        max_length=40,
+        choices=InconsistencyType.choices,
+    )
+
+    severity = models.CharField(
+        max_length=20,
+        choices=InconsistencySeverity.choices,
+    )
+
+    description = models.TextField()
+
+    source_documents = models.JSONField(
+        default=list,
+        blank=True,
+    )
+
+    requires_human_review = models.BooleanField(
+        default=True,
+    )
+
+    is_resolved = models.BooleanField(
+        default=False,
+    )
+
+    resolved_at = models.DateTimeField(
+        null=True,
+        blank=True,
+    )
+
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+    )
+
+    updated_at = models.DateTimeField(
+        auto_now=True,
+    )
+
+    class Meta:
+        ordering = ["-created_at"]
+
+        indexes = [
+            models.Index(
+                fields=[
+                    "claim",
+                    "is_resolved",
+                ],
+                name="claim_ai_inconsistency_idx",
+            ),
+        ]
+
+    def __str__(self):
+        return (
+            f"ClaimAIInconsistency("
+            f"claim_id={self.claim_id}, "
+            f"type={self.inconsistency_type}, "
+            f"severity={self.severity}"
             f")"
         )
