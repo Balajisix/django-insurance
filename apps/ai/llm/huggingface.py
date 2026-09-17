@@ -1,3 +1,5 @@
+import json
+
 from django.conf import settings
 from huggingface_hub import InferenceClient
 
@@ -29,6 +31,7 @@ class HuggingFaceLLMProvider:
         user_prompt: str,
         max_tokens: int = 500,
         temperature: float = 0.1,
+        response_format: dict | None = None,
     ) -> str:
 
         if not system_prompt.strip():
@@ -57,6 +60,7 @@ class HuggingFaceLLMProvider:
                 max_tokens=max_tokens,
                 temperature=temperature,
                 stream=False,
+                response_format=response_format,
             )
         )
 
@@ -78,3 +82,45 @@ class HuggingFaceLLMProvider:
             )
 
         return content.strip()
+
+    def generate_json(
+        self,
+        *,
+        system_prompt: str,
+        user_prompt: str,
+        schema: dict | None = None,
+        max_tokens: int = 800,
+        temperature: float = 0.1,
+    ) -> dict:
+
+        response_format = None
+
+        if schema:
+            response_format = schema
+        else:
+            response_format = {
+                "type": "json"
+            }
+
+        content = self.generate(
+            system_prompt=system_prompt,
+            user_prompt=user_prompt,
+            max_tokens=max_tokens,
+            temperature=temperature,
+            response_format=response_format,
+        )
+
+        try:
+            result = json.loads(content)
+
+        except json.JSONDecodeError as exc:
+            raise ValueError(
+                "LLM returned invalid JSON."
+            ) from exc
+
+        if not isinstance(result, dict):
+            raise ValueError(
+                "LLM JSON response must be an object."
+            )
+
+        return result

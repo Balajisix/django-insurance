@@ -64,6 +64,12 @@ class ClaimEventType(models.TextChoices):
     SETTLED = "SETTLED", "Claim Settled"
     CLOSED = "CLOSED", "Claim Closed"
 
+class AIAnalysisStatus(models.TextChoices):
+    PENDING = "PENDING", "Pending"
+    PROCESSING = "PROCESSING", "Processing"
+    COMPLETED = "COMPLETED", "Completed"
+    FAILED = "FAILED", "Failed"
+
 class Claim(models.Model):
     """
     Represents an insurance claim raised against a policy.
@@ -306,4 +312,69 @@ class ClaimSettlement(models.Model):
         return (
             f"{self.claim.claim_number} - "
             f"{self.payment_reference}"
+        )
+
+class ClaimAIAnalysis(models.Model):
+    """
+    Stores the latest AI-generated analysis for a claim.
+
+    This is an AI assistance record and does not represent
+    the final insurance decision.
+    """
+
+    claim = models.OneToOneField(
+        Claim,
+        on_delete=models.CASCADE,
+        related_name="ai_analysis",
+    )
+
+    status = models.CharField(
+        max_length=20,
+        choices=AIAnalysisStatus.choices,
+        default=AIAnalysisStatus.PENDING,
+    )
+
+    summary = models.TextField(
+        blank=True,
+        default="",
+    )
+
+    structured_result = models.JSONField(
+        default=dict,
+        blank=True,
+    )
+
+    model_name = models.CharField(
+        max_length=150,
+        blank=True,
+        default="",
+    )
+
+    error_message = models.TextField(
+        blank=True,
+        default="",
+    )
+
+    generated_at = models.DateTimeField(
+        null=True,
+        blank=True,
+    )
+
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+    )
+
+    updated_at = models.DateTimeField(
+        auto_now=True,
+    )
+
+    class Meta:
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return (
+            f"ClaimAIAnalysis("
+            f"claim_id={self.claim_id}, "
+            f"status={self.status}"
+            f")"
         )

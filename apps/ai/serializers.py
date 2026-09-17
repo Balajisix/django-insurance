@@ -1,6 +1,7 @@
 from rest_framework import serializers
 
 from .models import DocumentExtraction, DocumentProcessingJob, DocumentChunk
+from apps.claims.models import ClaimAIAnalysis
 
 
 class DocumentProcessingJobSerializer(serializers.ModelSerializer):
@@ -203,3 +204,26 @@ class RAGResponseSerializer(
     sources = RAGSourceSerializer(
         many=True
     )
+
+class ClaimAIAnalysisSerializer(
+    serializers.ModelSerializer
+):
+    claim_number = serializers.CharField(
+        source="claim.claim_number",
+        read_only=True,
+    )
+
+    class Meta:
+        model = ClaimAIAnalysis
+        fields = [
+            "id",
+            "claim_number",
+            "status",
+            "summary",
+            "structured_result",
+            "model_name",
+            "error_message",
+            "generated_at",
+            "created_at",
+            "updated_at",
+        ]

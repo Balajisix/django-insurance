@@ -7,6 +7,7 @@ from apps.documents.models import ClaimDocument
 
 from .models import DocumentExtraction, DocumentProcessingJob, DocumentChunk
 from .serializers import (
+    ClaimAIAnalysisSerializer,
     DocumentExtractionSerializer,
     DocumentProcessingJobSerializer,
     DocumentChunkSerializer,
@@ -15,12 +16,15 @@ from .serializers import (
     RAGQuerySerializer
 )
 from .services import (
+    ClaimAISummaryService,
     DocumentProcessingService, 
     DocumentChunkingService, 
     DocumentEmbeddingService,
     DocumentRetrievalService,
     RAGService
 )
+
+from apps.claims.models import ClaimAIAnalysis
 
 
 class DocumentProcessingStartView(APIView):
@@ -320,3 +324,74 @@ class RAGQueryView(APIView):
                 },
                 status=status.HTTP_400_BAD_REQUEST,
             )
+
+class ClaimAISummaryView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(
+        self,
+        request,
+        claim_id,
+    ):
+
+        try:
+            service = ClaimAISummaryService()
+
+            analysis = service.generate(
+                claim_id=claim_id,
+            )
+
+            serializer = (
+                ClaimAIAnalysisSerializer(
+                    analysis
+                )
+            )
+
+            return Response(
+                serializer.data,
+                status=status.HTTP_200_OK,
+            )
+
+        except ValueError as exc:
+            return Response(
+                {
+                    "detail": str(exc)
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+class ClaimAISummaryDetailView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(
+        self,
+        request,
+        claim_id,
+    ):
+
+        analysis = (
+            ClaimAIAnalysis.objects
+            .filter(claim_id=claim_id)
+            .first()
+        )
+
+        if analysis is None:
+            return Response(
+                {
+                    "detail": (
+                        "No AI analysis has been "
+                        "generated for this claim."
+                    )
+                },
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        serializer = (
+            ClaimAIAnalysisSerializer(
+                analysis
+            )
+        )
+
+        return Response(
+            serializer.data
+        )

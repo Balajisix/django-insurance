@@ -5,6 +5,7 @@ from .models import (
     ClaimDocumentRequirement,
     ClaimEvent,
     ClaimSettlement,
+    ClaimAIAnalysis
 )
 
 
@@ -139,4 +140,33 @@ class ClaimEventAdmin(admin.ModelAdmin):
         "comment",
         "actor",
         "created_at",
+    )
+
+@admin.register(ClaimAIAnalysis)
+class ClaimAIAnalysisAdmin(admin.ModelAdmin):
+    list_display = (
+        "id",
+        "claim",
+        "status",
+        "model_name",
+        "generated_at",
+        "created_at",
+    )
+
+    list_filter = (
+        "status",
+        "model_name",
+        "created_at",
+    )
+
+    search_fields = (
+        "claim__claim_number",
+        "summary",
+        "error_message",
+    )
+
+    readonly_fields = (
+        "generated_at",
+        "created_at",
+        "updated_at",
     )
