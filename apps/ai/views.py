@@ -9,6 +9,7 @@ from .models import DocumentExtraction, DocumentProcessingJob, DocumentChunk
 from .serializers import (
     ClaimAIAnalysisSerializer,
     ClaimAIInconsistencySerializer,
+    ClaimAIIntelligenceSerializer,
     DocumentExtractionSerializer,
     DocumentProcessingJobSerializer,
     DocumentChunkSerializer,
@@ -19,6 +20,7 @@ from .serializers import (
     AIMissingInformationSerializer
 )
 from .services import (
+    ClaimAIIntelligenceService,
     ClaimAISummaryService,
     ClaimInconsistencyService,
     DocumentProcessingService, 
@@ -568,3 +570,39 @@ class ClaimInconsistencyListView(
                 ),
             }
         )
+
+class ClaimAIIntelligenceView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(
+        self,
+        request,
+        claim_id,
+    ):
+
+        try:
+            result = (
+                ClaimAIIntelligenceService
+                .get_intelligence(
+                    claim_id=claim_id
+                )
+            )
+
+            serializer = (
+                ClaimAIIntelligenceSerializer(
+                    result
+                )
+            )
+
+            return Response(
+                serializer.data,
+                status=status.HTTP_200_OK,
+            )
+
+        except ValueError as exc:
+            return Response(
+                {
+                    "detail": str(exc)
+                },
+                status=status.HTTP_404_NOT_FOUND,
+            )

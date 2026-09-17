@@ -283,3 +283,18 @@ class ClaimAIInconsistencySerializer(
             "created_at",
             "updated_at",
         ]
+
+class ClaimAIIntelligenceSerializer(
+    serializers.Serializer
+):
+    claim_id = serializers.IntegerField()
+
+    claim_number = serializers.CharField()
+
+    ai_summary = serializers.DictField(
+        allow_null=True
+    )
+
+    documents = serializers.DictField()
+
+    inconsistencies = serializers.ListField()
