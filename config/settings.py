@@ -58,6 +58,7 @@ INSTALLED_APPS = [
     'apps.claims.apps.ClaimsConfig',
     'apps.documents.apps.DocumentsConfig',
     'apps.ai.apps.AiConfig',
+    'apps.analytics.apps.AnalyticsConfig',
 ]
 
 MIDDLEWARE = [
@@ -225,4 +226,33 @@ HF_LLM_MODEL = env(
 HF_VISION_MODEL = env(
     "HF_VISION_MODEL",
     default="deepseek-ai/DeepSeek-V4-Flash-Vision-Exp",
+)
+
+# Snowflake Configuration
+SNOWFLAKE_ACCOUNT = env(
+    "SNOWFLAKE_ACCOUNT"
+)
+
+SNOWFLAKE_USER = env(
+    "SNOWFLAKE_USER"
+)
+
+SNOWFLAKE_PASSWORD = env(
+    "SNOWFLAKE_PASSWORD"
+)
+
+SNOWFLAKE_WAREHOUSE = env(
+    "SNOWFLAKE_WAREHOUSE"
+)
+
+SNOWFLAKE_DATABASE = env(
+    "SNOWFLAKE_DATABASE"
+)
+
+SNOWFLAKE_SCHEMA = env(
+    "SNOWFLAKE_SCHEMA"
+)
+
+SNOWFLAKE_ROLE = env(
+    "SNOWFLAKE_ROLE"
 )

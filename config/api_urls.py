@@ -29,7 +29,11 @@ urlpatterns = [
         include("apps.documents.urls"),
     ),
     path(
-    "ai/",
-    include("apps.ai.urls"),
-),
+        "ai/",
+        include("apps.ai.urls"),
+    ),
+    path(
+        "analytics/",
+        include("apps.analytics.urls"),
+    ),
 ]
