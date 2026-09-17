@@ -8,6 +8,7 @@ from .views import (
     DocumentChunkingView,
     DocumentEmbeddingView,
     DocumentSearchView,
+    MissingDocumentIntelligenceView,
     RAGQueryView,
     ClaimAISummaryView,
     ClaimAISummaryDetailView
@@ -56,14 +57,18 @@ urlpatterns = [
         name="rag-query",
     ),
     path(
-    "claims/<int:claim_id>/summary/",
-    ClaimAISummaryView.as_view(),
-    name="claim-ai-summary",
-),
-
-path(
-    "claims/<int:claim_id>/summary/detail/",
-    ClaimAISummaryDetailView.as_view(),
-    name="claim-ai-summary-detail",
-),
+        "claims/<int:claim_id>/summary/",
+        ClaimAISummaryView.as_view(),
+        name="claim-ai-summary",
+    ),
+    path(
+        "claims/<int:claim_id>/summary/detail/",
+        ClaimAISummaryDetailView.as_view(),
+        name="claim-ai-summary-detail",
+    ),
+    path(
+        "claims/<int:claim_id>/missing-documents/",
+        MissingDocumentIntelligenceView.as_view(),
+        name="missing-document-intelligence",
+    ),  
 ]

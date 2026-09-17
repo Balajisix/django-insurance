@@ -13,7 +13,9 @@ from .serializers import (
     DocumentChunkSerializer,
     DocumentEmbeddingSerializer,
     DocumentSearchSerializer,
-    RAGQuerySerializer
+    RAGQuerySerializer,
+    RequiredDocumentStatusSerializer,
+    AIMissingInformationSerializer
 )
 from .services import (
     ClaimAISummaryService,
@@ -21,10 +23,11 @@ from .services import (
     DocumentChunkingService, 
     DocumentEmbeddingService,
     DocumentRetrievalService,
-    RAGService
+    RAGService,
+    MissingDocumentService
 )
 
-from apps.claims.models import ClaimAIAnalysis
+from apps.claims.models import ClaimAIAnalysis, Claim, ClaimAIMissingInformation
 
 
 class DocumentProcessingStartView(APIView):
@@ -394,4 +397,81 @@ class ClaimAISummaryDetailView(APIView):
 
         return Response(
             serializer.data
+        )
+
+class MissingDocumentIntelligenceView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(
+        self,
+        request,
+        claim_id,
+    ):
+
+        try:
+            claim = Claim.objects.get(
+                id=claim_id
+            )
+        except Claim.DoesNotExist:
+            return Response(
+                {
+                    "detail": "Claim not found."
+                },
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        required_documents = (
+            MissingDocumentService
+            .get_required_document_status(
+                claim_id=claim_id
+            )
+        )
+
+        missing_required_documents = (
+            MissingDocumentService
+            .get_missing_required_documents(
+                claim_id=claim_id
+            )
+        )
+
+        ai_observations = (
+            ClaimAIMissingInformation.objects
+            .filter(
+                claim=claim,
+                source="AI_OBSERVATION",
+                is_resolved=False,
+            )
+            .order_by("-created_at")
+        )
+
+        required_serializer = (
+            RequiredDocumentStatusSerializer(
+                required_documents,
+                many=True,
+            )
+        )
+
+        ai_serializer = (
+            AIMissingInformationSerializer(
+                ai_observations,
+                many=True,
+            )
+        )
+
+        return Response(
+            {
+                "claim_id": claim.id,
+                "claim_number": (
+                    claim.claim_number
+                ),
+                "required_documents": (
+                    required_serializer.data
+                ),
+                "missing_required_documents": (
+                    missing_required_documents
+                ),
+                "ai_observed_missing_information": (
+                    ai_serializer.data
+                ),
+            }
         )

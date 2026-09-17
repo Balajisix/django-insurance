@@ -5,7 +5,8 @@ from .models import (
     ClaimDocumentRequirement,
     ClaimEvent,
     ClaimSettlement,
-    ClaimAIAnalysis
+    ClaimAIAnalysis,
+    ClaimAIMissingInformation
 )
 
 
@@ -167,6 +168,36 @@ class ClaimAIAnalysisAdmin(admin.ModelAdmin):
 
     readonly_fields = (
         "generated_at",
+        "created_at",
+        "updated_at",
+    )
+
+@admin.register(ClaimAIMissingInformation)
+class ClaimAIMissingInformationAdmin(
+    admin.ModelAdmin
+):
+    list_display = (
+        "id",
+        "claim",
+        "source",
+        "document_type",
+        "is_resolved",
+        "created_at",
+    )
+
+    list_filter = (
+        "source",
+        "is_resolved",
+        "created_at",
+    )
+
+    search_fields = (
+        "claim__claim_number",
+        "description",
+        "document_type",
+    )
+
+    readonly_fields = (
         "created_at",
         "updated_at",
     )

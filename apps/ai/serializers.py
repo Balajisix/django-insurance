@@ -1,7 +1,7 @@
 from rest_framework import serializers
 
 from .models import DocumentExtraction, DocumentProcessingJob, DocumentChunk
-from apps.claims.models import ClaimAIAnalysis
+from apps.claims.models import ClaimAIAnalysis, ClaimAIMissingInformation
 
 
 class DocumentProcessingJobSerializer(serializers.ModelSerializer):
@@ -226,4 +226,36 @@ class ClaimAIAnalysisSerializer(
             "generated_at",
             "created_at",
             "updated_at",
+        ]
+
+class RequiredDocumentStatusSerializer(
+    serializers.Serializer
+):
+    document_type = serializers.CharField()
+
+    description = serializers.CharField()
+
+    required = serializers.BooleanField()
+
+    fulfilled = serializers.BooleanField()
+
+    fulfilled_at = serializers.DateTimeField(
+        allow_null=True,
+    )
+
+
+class AIMissingInformationSerializer(
+    serializers.ModelSerializer
+):
+    class Meta:
+        model = ClaimAIMissingInformation
+
+        fields = [
+            "id",
+            "description",
+            "source",
+            "document_type",
+            "is_resolved",
+            "resolved_at",
+            "created_at",
         ]

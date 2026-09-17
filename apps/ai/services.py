@@ -27,7 +27,8 @@ from .prompts.claim_summary import CLAIM_SUMMARY_SCHEMA, build_claim_summary_pro
 from apps.claims.models import (
     Claim,
     ClaimAIAnalysis,
-    AIAnalysisStatus
+    AIAnalysisStatus,
+    ClaimDocumentRequirement
 )
 
 
@@ -715,10 +716,6 @@ class RAGService:
         }
 
 class ClaimSummaryContextBuilder:
-    """
-    Builds factual claim context for AI summarization.
-    """
-
     @staticmethod
     def build_claim_data(claim) -> str:
 
@@ -759,6 +756,32 @@ Content:
             )
 
         return "\n".join(sections)
+
+    @staticmethod
+    def build_requirements_data(
+        requirements: list[dict],
+    ) -> str:
+
+        if not requirements:
+            return "No document requirements were configured."
+
+        lines = []
+
+        for requirement in requirements:
+            lines.append(
+                (
+                    f"Document Type: "
+                    f"{requirement['document_type']}\n"
+                    f"Description: "
+                    f"{requirement['description']}\n"
+                    f"Required: "
+                    f"{requirement['required']}\n"
+                    f"Fulfilled: "
+                    f"{requirement['fulfilled']}"
+                )
+            )
+
+        return "\n\n".join(lines)
 
 class ClaimAISummaryService:
     """
@@ -821,6 +844,20 @@ class ClaimAISummaryService:
                 .build_claim_data(claim)
             )
 
+            requirement_status = (
+                MissingDocumentService
+                .get_required_document_status(
+                    claim_id=claim_id
+                )
+            )
+
+            requirements_context = (
+                ClaimSummaryContextBuilder
+                .build_requirements_data(
+                    requirement_status
+                )
+            )
+
             # Retrieve multiple semantically relevant
             # chunks from this claim's documents.
             retrieval_results = (
@@ -852,6 +889,7 @@ class ClaimAISummaryService:
             user_prompt = (
                 build_claim_summary_prompt(
                     claim_data=claim_data,
+                    requirements=requirements_context,
                     context=document_context,
                 )
             )
@@ -870,6 +908,13 @@ class ClaimAISummaryService:
 
             self._validate_result(
                 structured_result
+            )
+
+            self.store_ai_missing_information(
+                claim=claim,
+                items=structured_result[
+                    "missing_information"
+                ]
             )
 
             readable_summary = (
@@ -1073,3 +1118,104 @@ class ClaimAISummaryService:
         )
 
         return "\n".join(lines)
+
+    @staticmethod
+    def _store_ai_missing_information(
+        *,
+        claim,
+        items: list[str],
+    ):
+        from apps.claims.models import (
+            ClaimAIMissingInformation,
+            MissingInformationSource,
+        )
+
+        # Clear previous unresolved AI observations.
+        ClaimAIMissingInformation.objects.filter(
+            claim=claim,
+            source=(
+                MissingInformationSource
+                .AI_OBSERVATION
+            ),
+            is_resolved=False,
+        ).update(
+            is_resolved=True,
+            resolved_at=timezone.now(),
+        )
+
+        for item in items:
+            description = item.strip()
+
+            if not description:
+                continue
+
+            ClaimAIMissingInformation.objects.create(
+                claim=claim,
+                description=description,
+                source=(
+                    MissingInformationSource
+                    .AI_OBSERVATION
+                ),
+            )
+
+class MissingDocumentService:
+    @staticmethod
+    def get_required_document_status(
+        *,
+        claim_id: int,
+    ) -> list[dict]:
+
+        requirements = (
+            ClaimDocumentRequirement.objects
+            .filter(claim_id=claim_id)
+            .order_by("document_type")
+        )
+
+        return [
+            {
+                "document_type": (
+                    requirement.document_type
+                ),
+                "description": (
+                    requirement.description
+                ),
+                "required": (
+                    requirement.is_required
+                ),
+                "fulfilled": (
+                    requirement.is_fulfilled
+                ),
+                "fulfilled_at": (
+                    requirement.fulfilled_at
+                ),
+            }
+            for requirement in requirements
+        ]
+
+    @staticmethod
+    def get_missing_required_documents(
+        *,
+        claim_id: int,
+    ) -> list[dict]:
+
+        requirements = (
+            ClaimDocumentRequirement.objects
+            .filter(
+                claim_id=claim_id,
+                is_required=True,
+                is_fulfilled=False,
+            )
+            .order_by("document_type")
+        )
+
+        return [
+            {
+                "document_type": (
+                    requirement.document_type
+                ),
+                "description": (
+                    requirement.description
+                ),
+            }
+            for requirement in requirements
+        ]

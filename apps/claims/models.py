@@ -70,6 +70,10 @@ class AIAnalysisStatus(models.TextChoices):
     COMPLETED = "COMPLETED", "Completed"
     FAILED = "FAILED", "Failed"
 
+class MissingInformationSource(models.TextChoices):
+    BUSINESS_RULE = "BUSINESS_RULE", "Business Rule"
+    AI_OBSERVATION = "AI_OBSERVATION", "AI Observation"
+
 class Claim(models.Model):
     """
     Represents an insurance claim raised against a policy.
@@ -376,5 +380,63 @@ class ClaimAIAnalysis(models.Model):
             f"ClaimAIAnalysis("
             f"claim_id={self.claim_id}, "
             f"status={self.status}"
+            f")"
+        )
+
+class ClaimAIMissingInformation(models.Model):
+    claim = models.ForeignKey(
+        Claim,
+        on_delete=models.CASCADE,
+        related_name="ai_missing_information",
+    )
+
+    description = models.TextField()
+
+    source = models.CharField(
+        max_length=30,
+        choices=MissingInformationSource.choices,
+    )
+
+    document_type = models.CharField(
+        max_length=50,
+        blank=True,
+        default="",
+    )
+
+    is_resolved = models.BooleanField(
+        default=False,
+    )
+
+    resolved_at = models.DateTimeField(
+        null=True,
+        blank=True,
+    )
+
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+    )
+
+    updated_at = models.DateTimeField(
+        auto_now=True,
+    )
+
+    class Meta:
+        ordering = ["-created_at"]
+
+        indexes = [
+            models.Index(
+                fields=[
+                    "claim",
+                    "source",
+                ],
+                name="claim_ai_missing_source_idx",
+            ),
+        ]
+
+    def __str__(self):
+        return (
+            f"ClaimAIMissingInformation("
+            f"claim_id={self.claim_id}, "
+            f"source={self.source}"
             f")"
         )
