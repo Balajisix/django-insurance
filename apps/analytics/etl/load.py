@@ -95,6 +95,36 @@ class SnowflakeLoader:
             "DIM_CUSTOMER",
         )
 
+    def validate_reference_dimensions(self):
+        checks = {
+            "DIM_CUSTOMER": "CUSTOMER_NUMBER",
+            "DIM_POLICY": "POLICY_NUMBER",
+            "DIM_CLAIM_TYPE": "CLAIM_TYPE_CODE",
+            "DIM_DATE": "DATE_KEY",
+        }
+
+        for table, key_column in checks.items():
+
+            sql = f"""
+                SELECT
+                    {key_column},
+                    COUNT(*) AS RECORD_COUNT
+                FROM
+                    {self.client.database}.{self.client.schema}.{table}
+                GROUP BY
+                    {key_column}
+                HAVING COUNT(*) > 1
+            """
+
+            duplicates = self.client.fetch_dataframe(sql)
+
+            if not duplicates.empty:
+                raise ValueError(
+                    f"Duplicate dimension keys detected in "
+                    f"{table} ({key_column}):\n"
+                    f"{duplicates.to_string(index=False)}"
+                )
+
     def load_dim_policy(self, df: pd.DataFrame):
         self.load_dataframe(
             df,

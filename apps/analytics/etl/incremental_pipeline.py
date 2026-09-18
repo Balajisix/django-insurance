@@ -519,6 +519,18 @@ class IncrementalSnowflakeETLPipeline:
             stage,
         )
 
+        if final_fact["CLAIM_NUMBER"].duplicated().any():
+            duplicate_claims = final_fact[
+                final_fact["CLAIM_NUMBER"].duplicated(
+                    keep=False
+                )
+            ]
+
+            raise ValueError(
+                "Duplicate claims detected before FACT_CLAIM MERGE:\n"
+                f"{duplicate_claims.to_string(index=False)}"
+            )
+
         sql = f"""
             MERGE INTO {target} target
             USING {stage} source

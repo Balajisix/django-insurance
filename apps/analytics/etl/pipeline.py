@@ -170,6 +170,8 @@ class SnowflakeETLPipeline:
             dim_policy
         )
 
+        self.loader.validate_reference_dimensions()
+
         # 6. GET SURROGATE KEYS
         customer_keys = self.loader.get_customer_keys()
         policy_keys = self.loader.get_policy_keys()
