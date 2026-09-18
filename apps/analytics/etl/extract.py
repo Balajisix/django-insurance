@@ -1,16 +1,20 @@
 import pandas as pd
 
+from django.db.models import Q
+
 from apps.customers.models import Customer
 from apps.policies.models import Policy
-from apps.claims.models import Claim, ClaimSettlement, ClaimAIAnalysis
+from apps.claims.models import (
+    Claim,
+    ClaimSettlement,
+    ClaimAIAnalysis,
+)
 
 
 class PostgreSQLExtractor:
-    """
-    Extract transactional data from PostgreSQL using Django ORM.
-    """
 
-    def customers(self) -> pd.DataFrame:
+    def customers(self, since=None) -> pd.DataFrame:
+
         queryset = Customer.objects.values(
             "customer_number",
             "user__first_name",
@@ -23,6 +27,11 @@ class PostgreSQLExtractor:
             "created_at",
             "updated_at",
         )
+
+        if since is not None:
+            queryset = queryset.filter(
+                updated_at__gt=since
+            )
 
         df = pd.DataFrame.from_records(queryset)
 
@@ -47,7 +56,8 @@ class PostgreSQLExtractor:
 
         return df
 
-    def policies(self) -> pd.DataFrame:
+    def policies(self, since=None) -> pd.DataFrame:
+
         queryset = Policy.objects.values(
             "policy_number",
             "customer__customer_number",
@@ -59,6 +69,11 @@ class PostgreSQLExtractor:
             "created_at",
             "updated_at",
         )
+
+        if since is not None:
+            queryset = queryset.filter(
+                updated_at__gt=since
+            )
 
         df = pd.DataFrame.from_records(queryset)
 
@@ -82,10 +97,17 @@ class PostgreSQLExtractor:
 
         return df
 
-    def claims(self) -> pd.DataFrame:
+    def claims(
+        self,
+        since=None,
+        claim_numbers=None,
+    ) -> pd.DataFrame:
         """
-        Extract claims and explicitly obtain CUSTOMER_NUMBER
-        through Claim -> Policy -> Customer.
+        Extract claims changed since the watermark.
+
+        A claim can also be refreshed when a related settlement
+        or AI analysis changes, even if Claim.updated_at itself
+        did not change.
         """
 
         queryset = Claim.objects.values(
@@ -100,6 +122,21 @@ class PostgreSQLExtractor:
             "created_at",
             "updated_at",
         )
+
+        filters = Q()
+
+        if since is not None:
+            filters |= Q(
+                updated_at__gt=since
+            )
+
+        if claim_numbers:
+            filters |= Q(
+                claim_number__in=claim_numbers
+            )
+
+        if filters.children:
+            queryset = queryset.filter(filters)
 
         df = pd.DataFrame.from_records(queryset)
 
@@ -124,12 +161,20 @@ class PostgreSQLExtractor:
 
         return df
 
-    def settlements(self) -> pd.DataFrame:
+    def settlements(self, since=None) -> pd.DataFrame:
+
         queryset = ClaimSettlement.objects.values(
             "claim__claim_number",
             "settlement_amount",
             "settled_at",
+            "created_at",
+            "updated_at",
         )
+
+        if since is not None:
+            queryset = queryset.filter(
+                updated_at__gt=since
+            )
 
         df = pd.DataFrame.from_records(queryset)
 
@@ -141,19 +186,29 @@ class PostgreSQLExtractor:
                 "claim__claim_number": "CLAIM_NUMBER",
                 "settlement_amount": "SETTLEMENT_AMOUNT",
                 "settled_at": "SETTLED_AT",
+                "created_at": "CREATED_AT",
+                "updated_at": "UPDATED_AT",
             },
             inplace=True,
         )
 
         return df
 
-    def ai_analyses(self) -> pd.DataFrame:
+    def ai_analyses(self, since=None) -> pd.DataFrame:
+
         queryset = ClaimAIAnalysis.objects.values(
             "claim__claim_number",
             "status",
             "structured_result",
             "generated_at",
+            "created_at",
+            "updated_at",
         )
+
+        if since is not None:
+            queryset = queryset.filter(
+                updated_at__gt=since
+            )
 
         df = pd.DataFrame.from_records(queryset)
 
@@ -166,6 +221,8 @@ class PostgreSQLExtractor:
                 "status": "AI_STATUS",
                 "structured_result": "STRUCTURED_RESULT",
                 "generated_at": "AI_GENERATED_AT",
+                "created_at": "AI_CREATED_AT",
+                "updated_at": "UPDATED_AT",
             },
             inplace=True,
         )

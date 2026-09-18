@@ -1,6 +1,7 @@
 from apps.analytics.etl.extract import PostgreSQLExtractor
 from apps.analytics.etl.load import SnowflakeLoader
 from apps.analytics.etl.transform import SnowflakeTransformer
+from apps.analytics.etl.watermark import SnowflakeWatermarkStore
 
 
 class SnowflakeETLPipeline:
@@ -10,6 +11,7 @@ class SnowflakeETLPipeline:
         self.extractor = PostgreSQLExtractor()
         self.transformer = SnowflakeTransformer()
         self.loader = SnowflakeLoader()
+        self.watermark_store = SnowflakeWatermarkStore()
 
     @staticmethod
     def normalize_key(series):
@@ -339,6 +341,28 @@ class SnowflakeETLPipeline:
         self.loader.load_fact_claim(
             fact_claim
         )
+
+        # Seed incremental ETL watermarks after a successful full load.
+        self.watermark_store.ensure_table()
+
+        connection = self.loader.client.connect()
+
+        try:
+            self.watermark_store.seed_from_dataframes(
+                connection,
+                {
+                    "customers": customers,
+                    "policies": policies,
+                    "claims": claims,
+                    "settlements": settlements,
+                    "ai_analyses": ai_analyses,
+                },
+            )
+
+            connection.commit()
+
+        finally:
+            connection.close()
 
         print()
         print("=" * 80)

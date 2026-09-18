@@ -174,3 +174,41 @@ class SnowflakeLoader:
         """
 
         return self.client.fetch_dataframe(sql)
+
+    def load_dataframe_on_connection(
+        self,
+        connection,
+        df: pd.DataFrame,
+        table_name: str,
+    ):
+        """
+        Load DataFrame into a table using an existing
+        Snowflake connection.
+
+        This is required for temporary staging tables because
+        temporary tables belong to the current Snowflake session.
+        """
+
+        if df.empty:
+            return
+
+        success, nchunks, nrows, output = write_pandas(
+            connection,
+            df,
+            table_name,
+            database=self.client.database,
+            schema=self.client.schema,
+            quote_identifiers=False,
+            auto_create_table=False,
+            use_logical_type=True,
+        )
+
+        if not success:
+            raise RuntimeError(
+                f"Failed loading staging table {table_name}: "
+                f"{output}"
+            )
+
+        print(
+            f"Staged {nrows} rows into {table_name}"
+        )
