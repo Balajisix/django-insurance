@@ -14,7 +14,6 @@ class HuggingFaceVisionProvider:
     """
 
     MODEL_NAME = settings.HF_VISION_MODEL
-    print(f"Using Hugging Face vision model: {MODEL_NAME}")
 
     def __init__(self):
         token = settings.HF_API_TOKEN
