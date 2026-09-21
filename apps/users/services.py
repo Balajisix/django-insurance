@@ -7,10 +7,6 @@ from .models import User, UserRole
 
 
 class AuthenticationService:
-    """
-    Business operations related to authentication.
-    """
-
     @staticmethod
     @transaction.atomic
     def register_customer(
@@ -53,11 +49,6 @@ class AuthenticationService:
 
     @staticmethod
     def login_user(user):
-        """
-        Get or create an authentication token
-        for the user.
-        """
-
         token, _ = Token.objects.get_or_create(
             user=user
         )
@@ -66,10 +57,6 @@ class AuthenticationService:
 
     @staticmethod
     def logout_user(user):
-        """
-        Revoke the user's current token.
-        """
-
         Token.objects.filter(
             user=user
         ).delete()

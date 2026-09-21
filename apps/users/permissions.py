@@ -4,10 +4,6 @@ from .models import UserRole
 
 
 class IsCustomer(BasePermission):
-    """
-    Allows only customer users.
-    """
-
     def has_permission(self, request, view):
         return (
             request.user.is_authenticated
@@ -17,10 +13,6 @@ class IsCustomer(BasePermission):
 
 
 class IsClaimsOfficer(BasePermission):
-    """
-    Allows only claims officers.
-    """
-
     def has_permission(self, request, view):
         return (
             request.user.is_authenticated
@@ -30,10 +22,6 @@ class IsClaimsOfficer(BasePermission):
 
 
 class IsManager(BasePermission):
-    """
-    Allows only managers.
-    """
-
     def has_permission(self, request, view):
         return (
             request.user.is_authenticated
@@ -43,10 +31,6 @@ class IsManager(BasePermission):
 
 
 class IsAdmin(BasePermission):
-    """
-    Allows only application administrators.
-    """
-
     def has_permission(self, request, view):
         return (
             request.user.is_authenticated
@@ -56,10 +40,6 @@ class IsAdmin(BasePermission):
 
 
 class IsClaimsStaff(BasePermission):
-    """
-    Allows claims officers, managers and admins.
-    """
-
     allowed_roles = {
         UserRole.CLAIMS_OFFICER,
         UserRole.MANAGER,

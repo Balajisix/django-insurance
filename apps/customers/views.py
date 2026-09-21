@@ -1,17 +1,12 @@
 from rest_framework import generics, status
 from rest_framework.response import Response
 
-from apps.common.exceptions import (
-    CustomerAlreadyExistsError,
-)
-
 from .models import Customer
 from .serializers import (
     CustomerCreateSerializer,
     CustomerSerializer,
 )
 from .services import CustomerService
-
 
 class CustomerListCreateView(generics.ListCreateAPIView):
     queryset = Customer.objects.select_related("user").all()

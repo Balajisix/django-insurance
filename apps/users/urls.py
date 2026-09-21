@@ -7,9 +7,7 @@ from .views import (
     RegisterView,
 )
 
-
 app_name = "users"
-
 
 urlpatterns = [
     path(

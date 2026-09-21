@@ -8,9 +8,7 @@ from apps.common.exceptions import (
 
 from .models import Customer
 
-
 User = get_user_model()
-
 
 class CustomerService:
     @staticmethod

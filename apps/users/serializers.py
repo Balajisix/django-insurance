@@ -2,10 +2,7 @@ from django.contrib.auth import authenticate
 from django.contrib.auth.password_validation import validate_password
 from rest_framework import serializers
 
-from apps.customers.models import Customer
-
-from .models import User, UserRole
-
+from .models import User
 
 class UserSerializer(serializers.ModelSerializer):
     """

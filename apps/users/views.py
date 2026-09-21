@@ -14,10 +14,6 @@ from .services import AuthenticationService
 
 
 class RegisterView(APIView):
-    """
-    POST /api/v1/auth/register/
-    """
-
     permission_classes = [
         AllowAny,
     ]
@@ -81,10 +77,6 @@ class RegisterView(APIView):
 
 
 class LoginView(APIView):
-    """
-    POST /api/v1/auth/login/
-    """
-
     permission_classes = [
         AllowAny,
     ]
@@ -124,10 +116,6 @@ class LoginView(APIView):
 
 
 class LogoutView(APIView):
-    """
-    POST /api/v1/auth/logout/
-    """
-
     permission_classes = [
         IsAuthenticated,
     ]
@@ -146,10 +134,6 @@ class LogoutView(APIView):
 
 
 class MeView(APIView):
-    """
-    GET /api/v1/auth/me/
-    """
-
     permission_classes = [
         IsAuthenticated,
     ]
