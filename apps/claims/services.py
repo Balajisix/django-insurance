@@ -11,7 +11,6 @@ from .models import (
     ClaimType,
 )
 
-
 DOCUMENT_REQUIREMENTS = {
     ClaimType.ACCIDENT: [
         (
@@ -60,12 +59,7 @@ DOCUMENT_REQUIREMENTS = {
     ],
 }
 
-
 class ClaimService:
-    """
-    Contains business operations related to insurance claims.
-    """
-
     @staticmethod
     @transaction.atomic
     def submit_claim(
@@ -76,10 +70,6 @@ class ClaimService:
         incident_description,
         estimated_loss,
     ) -> Claim:
-        """
-        Submit a new insurance claim.
-        """
-
         try:
             policy = Policy.objects.get(
                 id=policy_id

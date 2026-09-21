@@ -5,7 +5,6 @@ from django.db.models import Q
 
 from apps.common.identifiers import generate_claim_number
 
-
 class ClaimStatus(models.TextChoices):
     SUBMITTED = "SUBMITTED", "Submitted"
     DOCUMENT_PROCESSING = (
@@ -356,13 +355,6 @@ class ClaimSettlement(models.Model):
         )
 
 class ClaimAIAnalysis(models.Model):
-    """
-    Stores the latest AI-generated analysis for a claim.
-
-    This is an AI assistance record and does not represent
-    the final insurance decision.
-    """
-
     claim = models.OneToOneField(
         Claim,
         on_delete=models.CASCADE,
