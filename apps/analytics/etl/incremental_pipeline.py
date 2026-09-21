@@ -672,7 +672,7 @@ class IncrementalSnowflakeETLPipeline:
 
         print()
         print("Starting PostgreSQL → Snowflake INCREMENTAL ETL...")
-        print("=" * 80)
+        print("=" * 51)
 
         # 1. Ensure watermark metadata exists
 
@@ -876,9 +876,9 @@ class IncrementalSnowflakeETLPipeline:
             connection.close()
 
         print()
-        print("=" * 80)
+        print("=" * 51)
         print("Incremental ETL completed successfully.")
-        print("=" * 80)
+        print("=" * 51)
 
         return {
             "customers": len(customers),

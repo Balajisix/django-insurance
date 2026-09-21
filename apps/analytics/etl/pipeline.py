@@ -26,7 +26,7 @@ class SnowflakeETLPipeline:
 
         print()
         print("Starting PostgreSQL → Snowflake ETL...")
-        print("=" * 80)
+        print("=" * 51)
 
         # 1. EXTRACT
         customers = self.extractor.customers()
@@ -367,9 +367,9 @@ class SnowflakeETLPipeline:
             connection.close()
 
         print()
-        print("=" * 80)
+        print("=" * 51)
         print("PostgreSQL → Snowflake ETL completed successfully.")
-        print("=" * 80)
+        print("=" * 51)
 
         return {
             "customers": len(dim_customer),

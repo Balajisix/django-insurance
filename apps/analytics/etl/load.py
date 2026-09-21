@@ -52,14 +52,14 @@ class SnowflakeLoader:
             print(f"Skipping {table_name}: DataFrame is empty.")
             return
 
-        print("=" * 80)
+        print("=" * 51)
         print(
             f"Loading into: "
             f"{self.client.database}.{self.client.schema}.{table_name}"
         )
         print(f"Rows: {len(df)}")
         print(f"Columns: {list(df.columns)}")
-        print("=" * 80)
+        print("=" * 51)
 
         conn = self.client.connect()
 
