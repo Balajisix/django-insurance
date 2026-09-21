@@ -492,7 +492,7 @@ class DocumentEmbeddingService:
             ],
         )
 
-        return 
+        return chunks
 
 class DocumentRetrievalService:
     DEFAULT_TOP_K = 5
