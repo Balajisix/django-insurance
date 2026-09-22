@@ -2,12 +2,10 @@ import json
 
 import pandas as pd
 
-
 class SnowflakeTransformer:
     """
     Transform PostgreSQL data into Snowflake warehouse format.
     """
-
     @staticmethod
     def validate_unique(
         dataframe,
@@ -180,18 +178,6 @@ class SnowflakeTransformer:
         settlements: pd.DataFrame,
         ai_analyses: pd.DataFrame,
     ) -> pd.DataFrame:
-        """
-        Transform claims into the temporary ETL representation
-        used before loading FACT_CLAIM.
-
-        Business grain:
-            1 row = 1 claim
-
-        CUSTOMER_NUMBER, POLICY_NUMBER and CLAIM_TYPE_CODE
-        are temporary lookup keys and are removed before the
-        final FACT_CLAIM load.
-        """
-
         if claims is None or claims.empty:
             return pd.DataFrame()
 

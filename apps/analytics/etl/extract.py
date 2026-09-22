@@ -10,11 +10,8 @@ from apps.claims.models import (
     ClaimAIAnalysis,
 )
 
-
 class PostgreSQLExtractor:
-
     def customers(self, since=None) -> pd.DataFrame:
-
         queryset = Customer.objects.values(
             "customer_number",
             "user__first_name",
@@ -57,7 +54,6 @@ class PostgreSQLExtractor:
         return df
 
     def policies(self, since=None) -> pd.DataFrame:
-
         queryset = Policy.objects.values(
             "policy_number",
             "customer__customer_number",
@@ -102,14 +98,6 @@ class PostgreSQLExtractor:
         since=None,
         claim_numbers=None,
     ) -> pd.DataFrame:
-        """
-        Extract claims changed since the watermark.
-
-        A claim can also be refreshed when a related settlement
-        or AI analysis changes, even if Claim.updated_at itself
-        did not change.
-        """
-
         queryset = Claim.objects.values(
             "claim_number",
             "policy__policy_number",
@@ -162,7 +150,6 @@ class PostgreSQLExtractor:
         return df
 
     def settlements(self, since=None) -> pd.DataFrame:
-
         queryset = ClaimSettlement.objects.values(
             "claim__claim_number",
             "settlement_amount",
@@ -195,7 +182,6 @@ class PostgreSQLExtractor:
         return df
 
     def ai_analyses(self, since=None) -> pd.DataFrame:
-
         queryset = ClaimAIAnalysis.objects.values(
             "claim__claim_number",
             "status",

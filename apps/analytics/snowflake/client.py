@@ -4,10 +4,6 @@ import pandas as pd
 
 
 class SnowflakeClient:
-    """
-    Handles connections and SQL execution against Snowflake.
-    """
-
     account = settings.SNOWFLAKE_ACCOUNT
     user = settings.SNOWFLAKE_USER
     password = settings.SNOWFLAKE_PASSWORD
@@ -17,7 +13,6 @@ class SnowflakeClient:
     role = settings.SNOWFLAKE_ROLE
 
     def connect(self):
-
         return snowflake.connector.connect(
             account=self.account,
             user=self.user,
@@ -33,16 +28,11 @@ class SnowflakeClient:
         query: str,
         params=None,
     ):
-
         connection = None
         cursor = None
-
         try:
-
             connection = self.connect()
-
             cursor = connection.cursor()
-
             cursor.execute(
                 query,
                 params,
@@ -51,7 +41,6 @@ class SnowflakeClient:
             return cursor.fetchall()
 
         finally:
-
             if cursor is not None:
                 cursor.close()
 
@@ -63,25 +52,18 @@ class SnowflakeClient:
         query: str,
         data,
     ):
-
         connection = None
         cursor = None
-
         try:
-
             connection = self.connect()
-
             cursor = connection.cursor()
-
             cursor.executemany(
                 query,
                 data,
             )
-
             connection.commit()
 
         finally:
-
             if cursor is not None:
                 cursor.close()
 
@@ -90,10 +72,8 @@ class SnowflakeClient:
 
     def fetch_dataframe(self, sql: str):
         conn = self.connect()
-
         try:
             cursor = conn.cursor()
-
             try:
                 cursor.execute(sql)
 
@@ -109,7 +89,6 @@ class SnowflakeClient:
             conn.close()
 
     def test_connection(self):
-
         rows = self.execute(
             """
             SELECT

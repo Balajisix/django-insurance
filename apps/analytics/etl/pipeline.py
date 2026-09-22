@@ -3,9 +3,7 @@ from apps.analytics.etl.load import SnowflakeLoader
 from apps.analytics.etl.transform import SnowflakeTransformer
 from apps.analytics.etl.watermark import SnowflakeWatermarkStore
 
-
 class SnowflakeETLPipeline:
-
     def __init__(self):
         # Create instances
         self.extractor = PostgreSQLExtractor()
@@ -23,7 +21,6 @@ class SnowflakeETLPipeline:
         )
 
     def run(self):
-
         print()
         print("Starting PostgreSQL → Snowflake ETL...")
         print("=" * 51)

@@ -1,5 +1,3 @@
-from datetime import datetime
-
 from apps.analytics.snowflake.client import SnowflakeClient
 
 import pandas as pd
