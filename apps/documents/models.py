@@ -32,12 +32,6 @@ class DocumentStatus(models.TextChoices):
 
 
 class ClaimDocument(models.Model):
-    """
-    Metadata for a document associated with an insurance claim.
-
-    The actual file is stored in AWS S3.
-    """
-
     claim = models.ForeignKey(
         "claims.Claim",
         on_delete=models.CASCADE,

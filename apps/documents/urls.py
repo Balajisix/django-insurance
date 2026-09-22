@@ -5,9 +5,7 @@ from .views import (
     ClaimDocumentListCreateView,
 )
 
-
 app_name = "documents"
-
 
 urlpatterns = [
     path(

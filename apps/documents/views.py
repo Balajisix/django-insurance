@@ -19,11 +19,6 @@ from .services import DocumentService
 class ClaimDocumentListCreateView(
     generics.ListCreateAPIView
 ):
-    """
-    GET  /api/v1/claims/{claim_id}/documents/
-    POST /api/v1/claims/{claim_id}/documents/
-    """
-
     permission_classes = [
         IsAuthenticated,
     ]
@@ -89,11 +84,6 @@ class ClaimDocumentListCreateView(
 class ClaimDocumentDetailView(
     generics.RetrieveDestroyAPIView
 ):
-    """
-    GET    /api/v1/documents/{id}/
-    DELETE /api/v1/documents/{id}/
-    """
-
     permission_classes = [
         IsAuthenticated,
     ]

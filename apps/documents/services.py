@@ -28,11 +28,6 @@ class DocumentService:
         document_type,
         uploaded_file,
     ) -> ClaimDocument:
-        """
-        Upload a claim document to S3 and create
-        its metadata record in PostgreSQL.
-        """
-
         try:
             claim = Claim.objects.get(
                 id=claim_id
@@ -88,12 +83,6 @@ class DocumentService:
         *,
         document_id,
     ):
-        """
-        Delete the document from S3 and PostgreSQL.
-        Re-open the document requirement if no documents
-        of that type remain.
-        """
-
         try:
             document = ClaimDocument.objects.get(
                 id=document_id
