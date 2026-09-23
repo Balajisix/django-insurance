@@ -60,3 +60,44 @@ class AuthenticationService:
         Token.objects.filter(
             user=user
         ).delete()
+
+    @staticmethod
+    @transaction.atomic
+    def create_staff_user(
+        *,
+        email,
+        password,
+        first_name,
+        last_name,
+        role,
+    ):
+        """
+        Create an internal staff account (claims officer,
+        manager or admin). Unlike register_customer(), this
+        does not create a Customer profile.
+        """
+
+        return User.objects.create_user(
+            email=email,
+            password=password,
+            first_name=first_name,
+            last_name=last_name,
+            role=role,
+        )
+
+    @staticmethod
+    def update_user_role(
+        *,
+        user,
+        role,
+    ):
+        user.role = role
+
+        user.save(
+            update_fields=[
+                "role",
+                "updated_at",
+            ]
+        )
+
+        return user

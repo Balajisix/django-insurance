@@ -5,6 +5,9 @@ from .views import (
     LogoutView,
     MeView,
     RegisterView,
+    StaffUserCreateView,
+    UserListView,
+    UserRoleUpdateView,
 )
 
 app_name = "users"
@@ -29,5 +32,22 @@ urlpatterns = [
         "me/",
         MeView.as_view(),
         name="me",
+    ),
+
+    # Admin: staff/user management
+    path(
+        "users/",
+        UserListView.as_view(),
+        name="user-list",
+    ),
+    path(
+        "users/create-staff/",
+        StaffUserCreateView.as_view(),
+        name="user-create-staff",
+    ),
+    path(
+        "users/<int:pk>/role/",
+        UserRoleUpdateView.as_view(),
+        name="user-role-update",
     ),
 ]

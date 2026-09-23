@@ -4,6 +4,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from apps.users.models import UserRole
+from apps.users.permissions import IsClaimsStaff
 
 from .models import Coverage, Policy
 from .serializers import (
@@ -16,13 +17,11 @@ from .services import PolicyService
 
 class PolicyListCreateView(generics.ListCreateAPIView):
     """
-    GET  /api/v1/policies/
-    POST /api/v1/policies/
+    GET  /api/v1/policies/  — a customer sees only their own
+                              policies; staff see everyone's.
+    POST /api/v1/policies/  — staff only. Issuing a policy is
+                              an underwriting action.
     """
-
-    permission_classes = [
-        IsAuthenticated,
-    ]
 
     queryset = (
         Policy.objects
@@ -36,6 +35,12 @@ class PolicyListCreateView(generics.ListCreateAPIView):
             )
         )
     )
+
+    def get_permissions(self):
+        if self.request.method == "POST":
+            return [IsAuthenticated(), IsClaimsStaff()]
+
+        return [IsAuthenticated()]
 
     def get_serializer_class(self):
         if self.request.method == "POST":
@@ -116,10 +121,15 @@ class PolicyDetailView(generics.RetrieveAPIView):
 class PolicyCoverageCreateView(generics.CreateAPIView):
     """
     POST /api/v1/policies/{id}/coverages/
+
+    Staff only. Adding coverage to a policy is an
+    underwriting action, not something a customer does
+    themselves.
     """
 
     permission_classes = [
         IsAuthenticated,
+        IsClaimsStaff,
     ]
 
     serializer_class = CoverageSerializer
@@ -127,14 +137,7 @@ class PolicyCoverageCreateView(generics.CreateAPIView):
     def create(self, request, *args, **kwargs):
         policy_id = kwargs["pk"]
 
-        policy_queryset = Policy.objects.all()
-
-        if request.user.role == UserRole.CUSTOMER:
-            policy_queryset = policy_queryset.filter(
-                customer__user=request.user,
-            )
-
-        policy_exists = policy_queryset.filter(
+        policy_exists = Policy.objects.filter(
             id=policy_id,
         ).exists()
 

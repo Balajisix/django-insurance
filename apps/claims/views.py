@@ -1,15 +1,18 @@
 from rest_framework import generics, status
+from rest_framework.generics import get_object_or_404
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.policies.models import Policy
 from apps.users.models import UserRole
+from apps.users.permissions import IsClaimsStaff
 
 from .models import (
     Claim,
     ClaimDocumentRequirement,
     ClaimEvent,
+    ClaimSettlement,
 )
 from .serializers import (
     ClaimApprovalSerializer,
@@ -160,10 +163,17 @@ class ClaimWorkflowActionView(
 ):
     """
     Generic workflow action endpoint handler.
+
+    Every workflow transition (start processing/review,
+    request information, resume, approve, reject, start
+    settlement, settle, close) is a staff-only action —
+    a customer can submit a claim and track its status,
+    but cannot move it through the workflow themselves.
     """
 
     permission_classes = [
         IsAuthenticated,
+        IsClaimsStaff,
     ]
 
     def get_claim(self, pk):
@@ -533,13 +543,22 @@ class ClaimEventListView(
     serializer_class = ClaimEventSerializer
 
     def get_queryset(self):
-        return (
+        queryset = (
             ClaimEvent.objects
             .select_related("actor")
             .filter(
                 claim_id=self.kwargs["claim_id"]
             )
         )
+
+        user = self.request.user
+
+        if user.role == UserRole.CUSTOMER:
+            queryset = queryset.filter(
+                claim__policy__customer__user=user
+            )
+
+        return queryset
 
 
 class ClaimRequirementListView(
@@ -558,7 +577,7 @@ class ClaimRequirementListView(
     )
 
     def get_queryset(self):
-        return (
+        queryset = (
             ClaimDocumentRequirement.objects
             .filter(
                 claim_id=self.kwargs[
@@ -566,6 +585,15 @@ class ClaimRequirementListView(
                 ]
             )
         )
+
+        user = self.request.user
+
+        if user.role == UserRole.CUSTOMER:
+            queryset = queryset.filter(
+                claim__policy__customer__user=user
+            )
+
+        return queryset
 
 
 class ClaimSettlementDetailView(
@@ -584,6 +612,21 @@ class ClaimSettlementDetailView(
     )
 
     def get_object(self):
-        return Claim.objects.get(
-            id=self.kwargs["claim_id"]
-        ).settlement
+        claim_queryset = Claim.objects.all()
+
+        user = self.request.user
+
+        if user.role == UserRole.CUSTOMER:
+            claim_queryset = claim_queryset.filter(
+                policy__customer__user=user
+            )
+
+        claim = get_object_or_404(
+            claim_queryset,
+            id=self.kwargs["claim_id"],
+        )
+
+        return get_object_or_404(
+            ClaimSettlement,
+            claim=claim,
+        )

@@ -4,6 +4,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.documents.models import ClaimDocument
+from apps.users.permissions import IsClaimsStaff
 
 from .models import DocumentExtraction, DocumentProcessingJob, DocumentChunk, DocumentVisualAnalysis
 from .serializers import (
@@ -30,14 +31,14 @@ from .services import (
     DocumentEmbeddingService,
     DocumentRetrievalService,
     RAGService,
-    MissingDocumentService
+    MissingDocumentService,
 )
 
 from apps.claims.models import ClaimAIAnalysis, Claim, ClaimAIInconsistency, ClaimAIMissingInformation
 
 
 class DocumentProcessingStartView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsClaimsStaff]
 
     def post(self, request, document_id):
         try:
@@ -88,7 +89,7 @@ class DocumentProcessingStartView(APIView):
 
 
 class DocumentProcessingJobListView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsClaimsStaff]
 
     def get(self, request, document_id):
         jobs = (
@@ -110,7 +111,7 @@ class DocumentProcessingJobListView(APIView):
 
 
 class DocumentExtractionDetailView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsClaimsStaff]
 
     def get(self, request, document_id):
         extraction = (
@@ -138,7 +139,7 @@ class DocumentExtractionDetailView(APIView):
         return Response(serializer.data)
 
 class DocumentChunkingView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsClaimsStaff]
 
     def post(self, request, document_id):
         try:
@@ -170,7 +171,7 @@ class DocumentChunkingView(APIView):
 
 
 class DocumentChunkListView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsClaimsStaff]
 
     def get(self, request, document_id):
         chunks = (
@@ -193,7 +194,7 @@ class DocumentChunkListView(APIView):
         )
 
 class DocumentEmbeddingView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsClaimsStaff]
 
     def post(self, request, document_id):
         try:
@@ -233,7 +234,7 @@ class DocumentEmbeddingView(APIView):
             )
 
 class DocumentSearchView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsClaimsStaff]
 
     def post(self, request):
 
@@ -282,7 +283,7 @@ class DocumentSearchView(APIView):
             )
 
 class RAGQueryView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsClaimsStaff]
 
     def post(self, request):
 
@@ -335,7 +336,7 @@ class RAGQueryView(APIView):
             )
 
 class ClaimAISummaryView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsClaimsStaff]
 
     def post(
         self,
@@ -370,7 +371,7 @@ class ClaimAISummaryView(APIView):
             )
 
 class ClaimAISummaryDetailView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsClaimsStaff]
 
     def get(
         self,
@@ -406,7 +407,7 @@ class ClaimAISummaryDetailView(APIView):
         )
 
 class MissingDocumentIntelligenceView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsClaimsStaff]
 
     def get(
         self,
@@ -485,7 +486,7 @@ class MissingDocumentIntelligenceView(APIView):
 class ClaimInconsistencyAnalysisView(
     APIView
 ):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsClaimsStaff]
 
     def post(
         self,
@@ -535,7 +536,7 @@ class ClaimInconsistencyAnalysisView(
 class ClaimInconsistencyListView(
     APIView
 ):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsClaimsStaff]
 
     def get(
         self,
@@ -574,7 +575,7 @@ class ClaimInconsistencyListView(
         )
 
 class ClaimAIIntelligenceView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsClaimsStaff]
 
     def get(
         self,
@@ -610,7 +611,7 @@ class ClaimAIIntelligenceView(APIView):
             )
 
 class ClaimAIWorkflowView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsClaimsStaff]
 
     def post(
         self,
@@ -682,7 +683,7 @@ class ClaimAIWorkflowView(APIView):
 class DocumentVisualAnalysisView(
     APIView
 ):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsClaimsStaff]
 
     def get(
         self,

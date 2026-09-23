@@ -2,7 +2,13 @@ from django.contrib.auth import authenticate
 from django.contrib.auth.password_validation import validate_password
 from rest_framework import serializers
 
-from .models import User
+from .models import User, UserRole
+
+STAFF_ROLE_CHOICES = [
+    (UserRole.CLAIMS_OFFICER, UserRole.CLAIMS_OFFICER.label),
+    (UserRole.MANAGER, UserRole.MANAGER.label),
+    (UserRole.ADMIN, UserRole.ADMIN.label),
+]
 
 class UserSerializer(serializers.ModelSerializer):
     """
@@ -187,3 +193,75 @@ class LoginResponseSerializer(serializers.Serializer):
 
     token = serializers.CharField()
     user = UserSerializer()
+
+
+class StaffUserCreateSerializer(serializers.Serializer):
+    """
+    Admin-only payload for creating an internal staff account
+    (claims officer, manager or admin). Staff accounts do not
+    get a Customer profile.
+    """
+
+    email = serializers.EmailField()
+
+    password = serializers.CharField(
+        write_only=True,
+        min_length=8,
+    )
+
+    password_confirm = serializers.CharField(
+        write_only=True,
+        min_length=8,
+    )
+
+    first_name = serializers.CharField(
+        required=True,
+        max_length=150,
+    )
+
+    last_name = serializers.CharField(
+        required=True,
+        max_length=150,
+    )
+
+    role = serializers.ChoiceField(
+        choices=STAFF_ROLE_CHOICES,
+    )
+
+    def validate_email(self, value):
+        value = value.lower().strip()
+
+        if User.objects.filter(email=value).exists():
+            raise serializers.ValidationError(
+                "A user with this email already exists."
+            )
+
+        return value
+
+    def validate(self, attrs):
+        password = attrs["password"]
+        password_confirm = attrs["password_confirm"]
+
+        if password != password_confirm:
+            raise serializers.ValidationError(
+                {
+                    "password_confirm": (
+                        "Passwords do not match."
+                    )
+                }
+            )
+
+        validate_password(password)
+
+        return attrs
+
+
+class UserRoleUpdateSerializer(serializers.Serializer):
+    """
+    Admin-only payload for changing an existing staff
+    member's role.
+    """
+
+    role = serializers.ChoiceField(
+        choices=STAFF_ROLE_CHOICES,
+    )
